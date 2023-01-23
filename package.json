@@ -1,0 +1,29 @@
+{
+  "name": "overlimit",
+  "description": "Alternative for Break Infinity",
+  "version": "0.0.0",
+  "main": "Overlimit.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/awWhy/Overlimit.git"
+  },
+  "author": "awWhy",
+  "license": "MIT license",
+  "bugs": {
+    "url": "https://github.com/awWhy/Overlimit/issues"
+  },
+  "scripts": {
+    "lint": "npx eslint Overlimit.ts",
+    "build": "npx esbuild Overlimit.ts --bundle --target=chrome63,firefox57,safari14,edge41,opera50 --outfile=Overlimit.js"
+  },
+  "devDependencies": {
+    "esbuild": "^0.17.4",
+    "@typescript-eslint/eslint-plugin": "^5.46.1",
+    "eslint": "^8.29.0",
+    "eslint-config-standard-with-typescript": "^22.0.0",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-n": "^15.6.0",
+    "eslint-plugin-promise": "^6.1.1",
+    "typescript": "^4.9.4"
+  }
+}
