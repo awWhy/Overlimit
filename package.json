@@ -14,7 +14,7 @@
   },
   "scripts": {
     "lint": "npx eslint Overlimit.ts",
-    "build": "npx esbuild Overlimit.ts --bundle --target=chrome63,firefox57,safari14,edge41,opera50 --outfile=Overlimit.js"
+    "build": "npx esbuild Overlimit.ts --target=chrome63,firefox57,safari14,edge41,opera50 --outfile=Overlimit.js"
   },
   "devDependencies": {
     "esbuild": "^0.17.4",

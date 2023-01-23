@@ -75,7 +75,7 @@ export const overlimit = {
             power: [6, -3], //When convert into: example 1000000 > 1e6; [+, -]
             maxPower: [1e3, -1e3], //When convert into: 1e2345 > 2ee3; [+, -] (power is never formated)
             point: '.', //What should be used instead of dot; example 1.21 > 1,21
-            separator: '' //What should be as a thousand separator; example 1200 > 1 200
+            separator: '' //What should be used as a thousand separator; example 1200 > 1 200
         }
     },
     Limit: (number: string | number | [number, number]) => {
