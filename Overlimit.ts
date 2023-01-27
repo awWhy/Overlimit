@@ -1,7 +1,7 @@
 /* Overlimit - awWhy's version of break infinity (or Decimal):
     From -1e1.8e308 to 1e1.8e308; Also allows for super small numbers like (1e-30000)
     Beyond 1e9e15 or 1 ** 10 ** maxSafeInteger, precision for exponent will decrease (multiply by 10 won't work and etc)
-    Because of floating errors at the end of calculations number is rounded to 15
+    Because of floating errors at the end of calculations number is rounded to 14
 
     Numbers can be send in these ways:
     1.25e32 as typeof 'number' (as long it's bellow 2**1024 or Number.MAX_VALUE)
@@ -76,8 +76,7 @@ export const overlimit = {
             digits: [4, 2], //Digits past point [max, min]
             //padding: true, //Will add missing digits at numbers bigger than 1e6 (1.00e6)
             power: [6, -3], //When convert into: example 1000000 > 1e6; [+, -]
-            //Just incase saying, -1e3 is -1000, while 1e-3 is 0.0001 do not get confused
-            maxPower: [1e3, -1e3], //When convert into: 1e2345 > 2ee3; [+, -] (power is never formated)
+            maxPower: 1e3, //When convert into: 1e2345 > 2ee3; [+, -] (power is never formated)
             point: '.', //What should be used instead of dot; example 1.21 > 1,21
             separator: '' //What should be used as a thousand separator; example 1200 > 1 200
         }
@@ -188,7 +187,7 @@ export const overlimit = {
             },
             format: (digits = null as null | number, type = 'number' as 'number' | 'input'): string => technical.format(result, digits, type),
             get: (): string => technical.convertBack(result),
-            noConvert: (): [number, number] => technical.fixFloats(result)
+            noConvert: (): [number, number] => technical.prepare(result)
         };
     },
     LimitAlt: {
@@ -330,7 +329,7 @@ export const overlimit = {
             if (right[0] === 0) { return left; }
             if (left[0] === 0) { return right; }
             const difference = left[1] - right[1];
-            if (Math.abs(difference) >= 15) {
+            if (Math.abs(difference) >= 14) {
                 return difference > 0 ? left : right; //NaN will go into block bellow
             } else {
                 if (difference === 0) {
@@ -564,7 +563,7 @@ export const overlimit = {
             const { format: settings } = overlimit.settings;
 
             //1.23ee123 (-1.23e-e123)
-            if ((power >= settings.maxPower[0] || power < settings.maxPower[1]) && type !== 'input') {
+            if ((power >= settings.maxPower || power <= -settings.maxPower) && type !== 'input') {
                 if (digits === null) { digits = settings.digits[1]; }
                 let exponent = Math.floor(Math.log10(Math.abs(power)));
                 let result = Math.abs(Math.round(power / 10 ** (exponent - digits)) / 10 ** digits);
@@ -619,15 +618,23 @@ export const overlimit = {
             if (after === 0) {
                 result[1] = 0; //Just in case
             } else if (after < 1 || (after >= 10 && isFinite(after))) { //isFinite here to allow Infinity
-                const digits = Math.floor(Math.log10(after)); //Can fail, but mostly should be fine (?)
+                const digits = Math.floor(Math.log10(after));
                 result[0] /= 10 ** digits;
                 result[1] += digits;
 
-                //Safety, since it's really important for functions like trunc(), less() to have a correct exponent
-                if (Math.abs(result[0]) < 1) { //Can happen
+                //Safety for functions like 'trunc', 'less'
+                if (Math.abs(result[0]) < 1) { //Happens more often than you would think
                     result[0] *= 10;
                     result[1]--;
                 }
+            }
+
+            //Safety for functions like 'equal'
+            result[0] = Math.round(result[0] * 1e14) / 1e14;
+
+            if (Math.abs(result[0]) >= 10) { //Again, but this time can happen very very rare
+                result[0] /= 10;
+                result[1]++;
             }
 
             return result;
@@ -640,26 +647,26 @@ export const overlimit = {
             }
             return result;
         },
-        fixFloats: (number: [number, number]): [number, number] => { //Decreases string length (removes extra information), also will try to fix any issues
+        prepare: (number: [number, number]): [number, number] => { //Decreases string length (removes extra information), also will try to fix any issues
             if (!isFinite(number[0]) || !isFinite(number[1])) { //NaN is not finite
                 if (number[0] === 0 || (number[1] < 0 && !isFinite(number[1]))) { return [0, 0]; }
                 return [isNaN(number[0]) || isNaN(number[1]) ? NaN : number[0] < 0 ? -Infinity : Infinity, 0];
             }
 
-            const { settings } = overlimit;
-            const digits = number[1] >= 0 ?
-                (number[1] >= settings.format.maxPower[0] ? settings.minDigits : 15) :
-                (number[1] <= settings.format.maxPower[1] ? settings.minDigits : 15);
-            number[0] = Math.round(number[0] * 10 ** digits) / 10 ** digits;
+            const maxPower = overlimit.settings.format.maxPower;
+            if (number[1] >= maxPower || number[1] <= -maxPower) {
+                const keep = 10 ** overlimit.settings.minDigits;
+                number[0] = Math.round(number[0] * keep) / keep;
+            }
 
             return number; //number[0] can become >= 10, but convert will fix it before being used again
         },
         convertBack: (number: [number, number]): string => {
-            number = overlimit.technical.fixFloats(number);
+            number = overlimit.technical.prepare(number);
             if (Math.abs(number[1]) < 1e16) { return number[1] === 0 ? `${number[0]}` : `${number[0]}e${number[1]}`; }
 
             const exponent = Math.floor(Math.log10(number[1]));
-            const result = Math.round(number[1] / 10 ** (exponent - 15)) / 1e15;
+            const result = Math.round(number[1] / 10 ** (exponent - 14)) / 1e14;
 
             return `${number[0]}e${result}e${exponent}`;
         }

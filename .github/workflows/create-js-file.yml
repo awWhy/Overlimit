@@ -21,6 +21,8 @@ jobs:
 
       - name: Build JS file
         run: |
+          rm -f Overlimit.js
           npm install
           npm run lint
           npm run build
+          mv Overlimit.js
