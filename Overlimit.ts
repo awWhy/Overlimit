@@ -40,6 +40,7 @@
         exp - I don't see the need, just use .power(Math.E, 2)
 
     > Longer chains should give better perfomance since convertion only happens at .get
+    > Some functions might break when exponent turns into Infinity or NaN within chain (.more() and alike, wasn't tested)
 
     Some JS rules are altered:
     '1 ** Infinity', '1 ** NaN' now returns 1 instead of NaN
@@ -474,32 +475,32 @@ export const overlimit = {
         },
         //abs, isNaN, isFinite are not there because used version is way too different
         less: (left: [number, number], right: [number, number]): boolean => {
-            if (left[1] === right[1] || !isFinite(left[0]) || !isFinite(right[0])) { return left[0] < right[0]; }
-            if (left[0] >= 0 && right[0] >= 0) { return left[1] < right[1]; }
-            if (left[0] < 0 && right[0] >= 0) { return true; }
-            if (right[0] < 0 && left[0] >= 0) { return false; }
+            if (left[0] === 0 || right[0] === 0 || left[1] === right[1]) { return left[0] < right[0]; }
+            if (left[0] > 0 && right[0] > 0) { return left[1] < right[1]; }
+            if (left[0] < 0 && right[0] > 0) { return true; }
+            if (right[0] < 0 && left[0] > 0) { return false; }
             return left[1] > right[1];
         },
         lessOrEqual: (left: [number, number], right: [number, number]): boolean => {
-            if (left[1] === right[1] || !isFinite(left[0]) || !isFinite(right[0])) { return left[0] <= right[0]; }
-            if (left[0] >= 0 && right[0] >= 0) { return left[1] < right[1]; }
-            if (left[0] < 0 && right[0] >= 0) { return true; }
-            if (right[0] < 0 && left[0] >= 0) { return false; }
+            if (left[0] === 0 || right[0] === 0 || left[1] === right[1]) { return left[0] <= right[0]; }
+            if (left[0] > 0 && right[0] > 0) { return left[1] < right[1]; }
+            if (left[0] < 0 && right[0] > 0) { return true; }
+            if (right[0] < 0 && left[0] > 0) { return false; }
             return left[1] > right[1];
         },
         more: (left: [number, number], right: [number, number]): boolean => {
-            if (left[1] === right[1] || !isFinite(left[0]) || !isFinite(right[0])) { return left[0] > right[0]; }
-            if (left[0] >= 0 && right[0] >= 0) { return left[1] > right[1]; }
-            if (left[0] < 0 && right[0] >= 0) { return false; }
-            if (right[0] < 0 && left[0] >= 0) { return true; }
+            if (left[0] === 0 || right[0] === 0 || left[1] === right[1]) { return left[0] > right[0]; }
+            if (left[0] > 0 && right[0] > 0) { return left[1] > right[1]; }
+            if (left[0] < 0 && right[0] > 0) { return false; }
+            if (right[0] < 0 && left[0] > 0) { return true; }
             return left[1] < right[1];
         },
         moreOrEqual: (left: [number, number], right: [number, number]): boolean => {
-            if (left[1] === right[1] || !isFinite(left[0]) || !isFinite(right[0])) { return left[0] >= right[0]; }
-            if (left[0] >= 0 && right[0] >= 0) { return left[1] > right[1]; }
-            if (left[0] < 0 && right[0] >= 0) { return false; }
-            if (right[0] < 0 && left[0] >= 0) { return true; }
-            return left[1] > right[1];
+            if (left[0] === 0 || right[0] === 0 || left[1] === right[1]) { return left[0] >= right[0]; }
+            if (left[0] > 0 && right[0] > 0) { return left[1] > right[1]; }
+            if (left[0] < 0 && right[0] > 0) { return false; }
+            if (right[0] < 0 && left[0] > 0) { return true; }
+            return left[1] < right[1];
         },
         equal: (left: [number, number], right: [number, number]): boolean => {
             if (!isFinite(left[0]) || !isFinite(right[0])) { return left[0] === right[0]; }
