@@ -1,7 +1,7 @@
 /* Overlimit - awWhy's version of break infinity (or Decimal):
     From -1e1.8e308 to 1e1.8e308; Also allows for super small numbers like (1e-30000)
     Beyond 1e9e15 or 1 ** 10 ** maxSafeInteger, precision for exponent will decrease (multiply by 10 won't work and etc)
-    Because of floating errors at the end of calculations number is rounded to maxDigits (in settings)
+    Because of floating errors at the end of calculations number is rounded to 15
 
     Numbers can be send in these ways:
     1.25e32 as typeof 'number' (as long it's bellow 2**1024 or Number.MAX_VALUE)
@@ -64,17 +64,18 @@
     format: Add padding setting: 1ee2 > 1.00ee2
     convert: Allow sent string '1e1e2' to look like '1ee2'
     NonChainableFunctions: special setting to return array instead of string
+    general: Use JS loophole to allow changing original number without any equal signs
 */
 
 export const overlimit = {
     settings: {
-        maxDigits: 12, //How many digits should be preserved when turning number into a string
         minDigits: 0, //When exponent is bigger than 1000 (format.maxPower)
         format: {
             //Calling function with type === 'input', will ignore point and separator, also number never turned into 1ee2
             digits: [4, 2], //Digits past point [max, min]
             //padding: true, //Will add missing digits at numbers bigger than 1e6 (1.00e6)
             power: [6, -3], //When convert into: example 1000000 > 1e6; [+, -]
+            //Just incase saying, -1e3 is -1000, while 1e-3 is 0.0001 do not get confused
             maxPower: [1e3, -1e3], //When convert into: 1e2345 > 2ee3; [+, -] (power is never formated)
             point: '.', //What should be used instead of dot; example 1.21 > 1,21
             separator: '' //What should be used as a thousand separator; example 1200 > 1 200
@@ -326,7 +327,7 @@ export const overlimit = {
         //Main calculations
         add: (left: [number, number], right: [number, number]): [number, number] => {
             const difference = left[1] - right[1];
-            if (Math.abs(difference) >= overlimit.settings.maxDigits) {
+            if (Math.abs(difference) >= 15) {
                 return difference > 0 ? left : right; //NaN will go into block bellow
             } else {
                 if (difference === 0) {
@@ -644,8 +645,8 @@ export const overlimit = {
 
             const { settings } = overlimit;
             const digits = number[1] >= 0 ?
-                (number[1] >= settings.format.maxPower[0] ? settings.minDigits : settings.maxDigits) :
-                (number[1] <= settings.format.maxPower[1] ? settings.minDigits : settings.maxDigits);
+                (number[1] >= settings.format.maxPower[0] ? settings.minDigits : 15) :
+                (number[1] <= settings.format.maxPower[1] ? settings.minDigits : 15);
             number[0] = Math.round(number[0] * 10 ** digits) / 10 ** digits;
 
             return number; //number[0] can become >= 10, but convert will fix it before being used again
