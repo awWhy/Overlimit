@@ -2,7 +2,7 @@
 export const overlimit = {
   settings: {
     minDigits: 0,
-    //When exponent is bigger than 1000 (format.maxPower)
+    //When exponent is bigger than format.maxPower (1000 as default)
     format: {
       //Calling function with type === 'input', will ignore point and separator, also number never turned into 1ee2
       digits: [4, 2],
@@ -11,7 +11,7 @@ export const overlimit = {
       power: [6, -3],
       //When convert into: example 1000000 > 1e6; [+, -]
       maxPower: 1e3,
-      //When convert into: 1e2345 > 2ee3; [+, -] (power is never formated)
+      //When convert into: 1e2345 > 2.34ee3; [+, -] (power is never formated)
       point: ".",
       //What should be used instead of dot; example 1.21 > 1,21
       separator: ""
@@ -80,9 +80,9 @@ export const overlimit = {
       },
       isNaN: () => isNaN(result[0]) || isNaN(result[1]),
       isFinite: () => isFinite(result[0]) && isFinite(result[1]),
-      less: (compare) => technical.less(result, technical.convert(compare)),
+      lessThan: (compare) => technical.less(result, technical.convert(compare)),
       lessOrEqual: (compare) => technical.lessOrEqual(result, technical.convert(compare)),
-      more: (compare) => technical.more(result, technical.convert(compare)),
+      moreThan: (compare) => technical.more(result, technical.convert(compare)),
       moreOrEqual: (compare) => technical.moreOrEqual(result, technical.convert(compare)),
       notEqual: (compare) => technical.notEqual(result, technical.convert(compare)),
       equal: (...compare) => {
@@ -112,130 +112,16 @@ export const overlimit = {
         return this;
       },
       format: (digits = null, type = "number") => technical.format(result, digits, type),
-      get: () => technical.convertBack(result),
-      noConvert: () => technical.prepare(result)
+      toNumber: (fixFloats = false) => Number(technical.convertBack(result, fixFloats)),
+      toString: (fixFloats = false) => technical.convertBack(result, fixFloats),
+      toArray: (fixFloats = false) => technical.prepare(result, fixFloats)
     };
   },
   LimitAlt: {
-    plus: (...numbers) => {
-      const { technical } = overlimit;
-      const array = technical.convertAll(numbers);
-      let result = technical.add(array[0], array[1]);
-      for (let i = 2; i < array.length; i++) {
-        result = technical.add(result, array[i]);
-      }
-      return technical.convertBack(result);
-    },
-    minus: (...numbers) => {
-      const { technical } = overlimit;
-      const array = technical.convertAll(numbers);
-      let result = technical.sub(array[0], array[1]);
-      for (let i = 2; i < array.length; i++) {
-        result = technical.sub(result, array[i]);
-      }
-      return technical.convertBack(result);
-    },
-    multiply: (...numbers) => {
-      const { technical } = overlimit;
-      const array = technical.convertAll(numbers);
-      let result = technical.mult(array[0], array[1]);
-      for (let i = 2; i < array.length; i++) {
-        result = technical.mult(result, array[i]);
-      }
-      return technical.convertBack(result);
-    },
-    divide: (...numbers) => {
-      const { technical } = overlimit;
-      const array = technical.convertAll(numbers);
-      let result = technical.div(array[0], array[1]);
-      for (let i = 2; i < array.length; i++) {
-        result = technical.div(result, array[i]);
-      }
-      return technical.convertBack(result);
-    },
-    power: (number, power) => {
-      const { technical } = overlimit;
-      return technical.convertBack(technical.pow(technical.convert(number), power));
-    },
-    log: (number, base = 2.718281828459045) => {
-      const { technical } = overlimit;
-      return technical.convertBack(technical.log(technical.convert(number), base));
-    },
-    //Fastest method (?), because no need to convert in both directions
+    //Faster methods (?), because no need to convert in both directions
     abs: (number) => number[0] === "-" ? number.substring(1) : number,
     isNaN: (number) => number.includes("NaN"),
-    isFinite: (number) => number.includes("Infinity"),
-    less: (first, second) => {
-      const { technical } = overlimit;
-      return technical.less(technical.convert(first), technical.convert(second));
-    },
-    lessOrEqual: (first, second) => {
-      const { technical } = overlimit;
-      return technical.lessOrEqual(technical.convert(first), technical.convert(second));
-    },
-    more: (first, second) => {
-      const { technical } = overlimit;
-      return technical.more(technical.convert(first), technical.convert(second));
-    },
-    moreOrEqual: (first, second) => {
-      const { technical } = overlimit;
-      return technical.moreOrEqual(technical.convert(first), technical.convert(second));
-    },
-    notEqual: (first, second) => {
-      const { technical } = overlimit;
-      return technical.notEqual(technical.convert(first), technical.convert(second));
-    },
-    equal: (...numbers) => {
-      const { technical } = overlimit;
-      const array = technical.convertAll(numbers);
-      let result = technical.equal(array[0], array[1]);
-      for (let i = 2; i < array.length; i++) {
-        result && (result = technical.equal(array[i - 1], array[i]));
-      }
-      return result;
-    },
-    max: (...numbers) => {
-      const { technical } = overlimit;
-      const array = technical.convertAll(numbers);
-      let result = technical.more(array[0], array[1]) ? array[0] : array[1];
-      for (let i = 2; i < array.length; i++) {
-        if (technical.less(result, array[i])) {
-          result = array[i];
-        }
-      }
-      return technical.convertBack(result);
-    },
-    min: (...numbers) => {
-      const { technical } = overlimit;
-      const array = technical.convertAll(numbers);
-      let result = technical.less(array[0], array[1]) ? array[0] : array[1];
-      for (let i = 2; i < array.length; i++) {
-        if (technical.more(result, array[i])) {
-          result = array[i];
-        }
-      }
-      return technical.convertBack(result);
-    },
-    trunc: (number) => {
-      const { technical } = overlimit;
-      return technical.convertBack(technical.trunc(technical.convert(number)));
-    },
-    floor: (number) => {
-      const { technical } = overlimit;
-      return technical.convertBack(technical.floor(technical.convert(number)));
-    },
-    ceil: (number) => {
-      const { technical } = overlimit;
-      return technical.convertBack(technical.ceil(technical.convert(number)));
-    },
-    round: (number) => {
-      const { technical } = overlimit;
-      return technical.convertBack(technical.round(technical.convert(number)));
-    },
-    format: (number, digits = null, type = "number") => {
-      const { technical } = overlimit;
-      return technical.format(technical.convert(number), digits, type);
-    }
+    isFinite: (number) => number.includes("Infinity")
   },
   /* Private functions */
   technical: {
@@ -505,7 +391,7 @@ export const overlimit = {
     format: (left, digits, type) => {
       const [base, power] = left;
       if (!isFinite(base) || !isFinite(power)) {
-        return overlimit.technical.convertBack(left);
+        return overlimit.technical.convertBack(left, false);
       }
       const { format: settings } = overlimit.settings;
       if ((power >= settings.maxPower || power <= -settings.maxPower) && type !== "input") {
@@ -592,7 +478,7 @@ export const overlimit = {
       }
       return result;
     },
-    prepare: (number) => {
+    prepare: (number, fixFloats) => {
       if (!isFinite(number[0]) || !isFinite(number[1])) {
         if (number[0] === 0 || number[1] < 0 && !isFinite(number[1])) {
           return [0, 0];
@@ -603,11 +489,17 @@ export const overlimit = {
       if (number[1] >= maxPower || number[1] <= -maxPower) {
         const keep = 10 ** overlimit.settings.minDigits;
         number[0] = Math.round(number[0] * keep) / keep;
+      } else if (fixFloats) {
+        number[0] = Math.round(number[0] * 1e14) / 1e14;
+        if (Math.abs(number[0]) >= 10) {
+          number[0] /= 10;
+          number[1]++;
+        }
       }
       return number;
     },
-    convertBack: (number) => {
-      number = overlimit.technical.prepare(number);
+    convertBack: (number, fixFloats) => {
+      number = overlimit.technical.prepare(number, fixFloats);
       if (Math.abs(number[1]) < 1e16) {
         return number[1] === 0 ? `${number[0]}` : `${number[0]}e${number[1]}`;
       }
