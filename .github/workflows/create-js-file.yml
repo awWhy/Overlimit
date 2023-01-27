@@ -20,9 +20,7 @@ jobs:
           node-version: '16.x'
 
       - name: Build JS file
-        run: |
-          rm -f Overlimit.js
+        run: | # I have no idea how to save outfile
           npm install
           npm run lint
           npm run build
-          mv Overlimit.js
