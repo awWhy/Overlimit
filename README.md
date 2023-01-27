@@ -1,6 +1,6 @@
 # Overlimit
 ## Alternative to Break Infinity
-Should have 0 dependicies (if not, then I set it up wrong)
+Should have 0 dependicies (if not, then I set it up wrong) \
 Curretly being worked on. But should be stable now \
 To use, just download .ts or .js (JS auto created by esbuild) file of Overlimit \
 Start with Limit(yourNumber).functionYouNeed().get() \
