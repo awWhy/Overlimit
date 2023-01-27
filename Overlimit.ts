@@ -327,6 +327,8 @@ export const overlimit = {
     technical: {
         //Main calculations
         add: (left: [number, number], right: [number, number]): [number, number] => {
+            if (right[0] === 0) { return left; }
+            if (left[0] === 0) { return right; }
             const difference = left[1] - right[1];
             if (Math.abs(difference) >= 15) {
                 return difference > 0 ? left : right; //NaN will go into block bellow
