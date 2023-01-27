@@ -27,7 +27,9 @@
 
         Exclusive: (both of them trying to fix floats and Infinity)
         get - return converted value
-        noConvert - returns non converted value (you can use it anywhere)
+
+        noConvert - returns non converted value (should be quicker, but JS reference issues will become a real pain)
+        Using it might have to always do 'const a = [...b]'; Sending array as number will auto clone it
 
     Non chainable: (LimitAlt.plus(2, '1'))
         All above, but some have different rules. Returns a string
@@ -601,7 +603,7 @@ export const overlimit = {
                 const index = number.indexOf('e'); //About 5+ times quicker than regex
                 result = index === -1 ? [Number(number), 0] : [Number(number.slice(0, index)), Number(number.slice(index + 1))];
             } else {
-                result = number; //Not instant return, because might need a fix
+                result = [...number]; //Not instant return, because might need a fix
             }
 
             if (Math.floor(result[1]) !== result[1]) { //Fix non trunc exponent ([2, 10.1] > [2.5, 10])

@@ -17,12 +17,12 @@
     "build": "npx esbuild Overlimit.ts --target=chrome63,firefox57,safari14,edge41,opera50 --outfile=Overlimit.js"
   },
   "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^5.49.0",
     "esbuild": "^0.17.4",
-    "@typescript-eslint/eslint-plugin": "^5.46.1",
-    "eslint": "^8.29.0",
-    "eslint-config-standard-with-typescript": "^22.0.0",
-    "eslint-plugin-import": "^2.26.0",
-    "eslint-plugin-n": "^15.6.0",
+    "eslint": "^8.32.0",
+    "eslint-config-standard-with-typescript": "^33.0.0",
+    "eslint-plugin-import": "^2.27.5",
+    "eslint-plugin-n": "^15.6.1",
     "eslint-plugin-promise": "^6.1.1",
     "typescript": "^4.9.4"
   }
