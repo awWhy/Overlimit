@@ -570,7 +570,10 @@ export const overlimit = {
         if (number[0] === 0 || number[1] === -Infinity) {
           return [0, 0];
         }
-        return isNaN(number[0]) || isNaN(number[1]) ? [NaN, NaN] : [number[0], Infinity];
+        if (isNaN(number[0]) || isNaN(number[1])) {
+          return [NaN, NaN];
+        }
+        return [number[0] < 0 ? -Infinity : Infinity, Infinity];
       }
       const maxPower = overlimit.settings.format.maxPower;
       if (number[1] >= maxPower || number[1] <= -maxPower) {

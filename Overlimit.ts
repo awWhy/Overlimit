@@ -580,7 +580,8 @@ export const overlimit = {
         prepare: (number: [number, number]): [number, number] => {
             if (!isFinite(number[0]) || !isFinite(number[1])) {
                 if (number[0] === 0 || number[1] === -Infinity) { return [0, 0]; }
-                return isNaN(number[0]) || isNaN(number[1]) ? [NaN, NaN] : [number[0], Infinity];
+                if (isNaN(number[0]) || isNaN(number[1])) { return [NaN, NaN]; }
+                return [number[0] < 0 ? -Infinity : Infinity, Infinity]; //Base can be non Infinity
             }
 
             const maxPower = overlimit.settings.format.maxPower;
