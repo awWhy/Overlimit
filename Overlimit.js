@@ -96,6 +96,10 @@ export const overlimit = {
       max: function(...compare) {
         const array = technical.convertAll(compare);
         for (let i = 0; i < array.length; i++) {
+          if (isNaN(array[i][0])) {
+            result = [NaN, NaN];
+            break;
+          }
           if (technical.less(result, array[i])) {
             result = array[i];
           }
@@ -105,6 +109,10 @@ export const overlimit = {
       min: function(...compare) {
         const array = technical.convertAll(compare);
         for (let i = 0; i < array.length; i++) {
+          if (isNaN(array[i][0])) {
+            result = [NaN, NaN];
+            break;
+          }
           if (technical.more(result, array[i])) {
             result = array[i];
           }
@@ -112,21 +120,25 @@ export const overlimit = {
         return this;
       },
       format: (digits = null, type = "number") => technical.format(result, digits, type),
-      toNumber: (fixFloats = false) => Number(technical.convertBack(result, fixFloats)),
-      toString: (fixFloats = false) => technical.convertBack(result, fixFloats),
-      toArray: (fixFloats = false) => technical.prepare(result, fixFloats)
+      toNumber: () => Number(technical.convertBack(result)),
+      toString: () => technical.convertBack(result),
+      toArray: () => technical.prepare(result)
     };
   },
   LimitAlt: {
     //Faster methods (?), because no need to convert in both directions
     abs: (number) => number[0] === "-" ? number.substring(1) : number,
     isNaN: (number) => number.includes("NaN"),
-    isFinite: (number) => number.includes("Infinity")
+    isFinite: (number) => !number.includes("Infinity") && !number.includes("NaN")
   },
   /* Private functions */
   technical: {
     //Main calculations
     add: (left, right) => {
+      if (!isFinite(left[0]) || !isFinite(right[0])) {
+        const check = left[0] + right[0];
+        return isNaN(left[0]) || isNaN(right[0]) || isNaN(check) ? [NaN, NaN] : [check, Infinity];
+      }
       if (right[0] === 0) {
         return left;
       }
@@ -176,7 +188,7 @@ export const overlimit = {
     },
     div: (left, right) => {
       if (right[0] === 0) {
-        return [NaN, 0];
+        return [NaN, NaN];
       } else if (left[0] === 0) {
         return [0, 0];
       }
@@ -197,7 +209,7 @@ export const overlimit = {
         const negative = left[0] < 0 ? Math.abs(power) % 2 : null;
         if (negative !== null) {
           if (Math.floor(power) !== power) {
-            return [NaN, 0];
+            return [NaN, NaN];
           }
           left[0] *= -1;
         }
@@ -205,13 +217,19 @@ export const overlimit = {
           if (power < 0) {
             return [0, 0];
           }
-          if (isNaN(power)) {
-            return [NaN, 0];
+          if (isNaN(power) || isNaN(left[0])) {
+            return [NaN, NaN];
           }
-          return [negative === 1 ? -Infinity : Infinity, 0];
+          return [negative === 1 ? -Infinity : Infinity, Infinity];
         }
         const base10 = power * (Math.log10(left[0]) + left[1]);
         const target = Math.floor(base10);
+        if (!isFinite(base10)) {
+          if (base10 < 0) {
+            return [0, 0];
+          }
+          return isNaN(left[0]) ? [NaN, NaN] : [negative === 1 ? -Infinity : Infinity, Infinity];
+        }
         left[0] = 10 ** (base10 - target);
         left[1] = target;
         if (negative === 1) {
@@ -222,20 +240,20 @@ export const overlimit = {
     },
     log: (left, base) => {
       const negative = left[0] < 0;
-      if (!isFinite(base)) {
-        return [isNaN(base) ? NaN : 0, 0];
-      } else if (base === 0 || base === 1) {
-        return [NaN, 0];
+      if (left[0] === 1 && left[1] === 0) {
+        return [0, 0];
+      } else if (base === 0 || base === 1 || !isFinite(base)) {
+        return [NaN, NaN];
+      } else if (!isFinite(left[0])) {
+        return isNaN(left[0]) || negative ? [NaN, NaN] : [Infinity, Infinity];
       } else if (left[0] <= 0) {
         if (left[0] === 0) {
-          return [-Infinity, 0];
+          return [-Infinity, Infinity];
         }
         if (base > 0) {
-          return [NaN, 0];
+          return [NaN, NaN];
         }
         left[0] *= -1;
-      } else if (left[0] === 1 && left[1] === 0) {
-        return [0, 0];
       }
       const tooSmall = left[1] < 0;
       const base10 = Math.log10(Math.abs(Math.log10(left[0]) + left[1]));
@@ -256,19 +274,19 @@ export const overlimit = {
       }
       if (base < 0 || negative) {
         if (left[1] < 0) {
-          return [NaN, 0];
+          return [NaN, NaN];
         }
-        const test = left[1] < 16 ? Math.round(left[0] * 10 ** 14) / 10 ** (14 - left[1]) % 2 : (
+        const test = left[1] < 16 ? Math.round(left[0] * 1e14) / 10 ** (14 - left[1]) % 2 : (
           //First remove error from floats (while keeping floats) then find if even
           0
         );
         if (base < 0 && !negative) {
           if (test !== 0) {
-            return [NaN, 0];
+            return [NaN, NaN];
           }
         } else {
           if (test !== 1) {
-            return [NaN, 0];
+            return [NaN, NaN];
           }
         }
       }
@@ -276,6 +294,16 @@ export const overlimit = {
     },
     //abs, isNaN, isFinite are not there because used version is way too different
     less: (left, right) => {
+      left[0] = Math.round(left[0] * 1e14) / 1e14;
+      right[0] = Math.round(right[0] * 1e14) / 1e14;
+      if (Math.abs(left[0]) === 10) {
+        left[0] = 1;
+        left[1]++;
+      }
+      if (Math.abs(right[0]) === 10) {
+        right[0] = 1;
+        right[1]++;
+      }
       if (left[0] === 0 || right[0] === 0 || left[1] === right[1]) {
         return left[0] < right[0];
       }
@@ -291,6 +319,16 @@ export const overlimit = {
       return left[1] > right[1];
     },
     lessOrEqual: (left, right) => {
+      left[0] = Math.round(left[0] * 1e14) / 1e14;
+      right[0] = Math.round(right[0] * 1e14) / 1e14;
+      if (Math.abs(left[0]) === 10) {
+        left[0] = 1;
+        left[1]++;
+      }
+      if (Math.abs(right[0]) === 10) {
+        right[0] = 1;
+        right[1]++;
+      }
       if (left[0] === 0 || right[0] === 0 || left[1] === right[1]) {
         return left[0] <= right[0];
       }
@@ -306,6 +344,16 @@ export const overlimit = {
       return left[1] > right[1];
     },
     more: (left, right) => {
+      left[0] = Math.round(left[0] * 1e14) / 1e14;
+      right[0] = Math.round(right[0] * 1e14) / 1e14;
+      if (Math.abs(left[0]) === 10) {
+        left[0] = 1;
+        left[1]++;
+      }
+      if (Math.abs(right[0]) === 10) {
+        right[0] = 1;
+        right[1]++;
+      }
       if (left[0] === 0 || right[0] === 0 || left[1] === right[1]) {
         return left[0] > right[0];
       }
@@ -321,6 +369,16 @@ export const overlimit = {
       return left[1] < right[1];
     },
     moreOrEqual: (left, right) => {
+      left[0] = Math.round(left[0] * 1e14) / 1e14;
+      right[0] = Math.round(right[0] * 1e14) / 1e14;
+      if (Math.abs(left[0]) === 10) {
+        left[0] = 1;
+        left[1]++;
+      }
+      if (Math.abs(right[0]) === 10) {
+        right[0] = 1;
+        right[1]++;
+      }
       if (left[0] === 0 || right[0] === 0 || left[1] === right[1]) {
         return left[0] >= right[0];
       }
@@ -336,14 +394,28 @@ export const overlimit = {
       return left[1] < right[1];
     },
     equal: (left, right) => {
-      if (!isFinite(left[0]) || !isFinite(right[0])) {
-        return left[0] === right[0];
+      left[0] = Math.round(left[0] * 1e14) / 1e14;
+      right[0] = Math.round(right[0] * 1e14) / 1e14;
+      if (Math.abs(left[0]) === 10) {
+        left[0] = 1;
+        left[1]++;
+      }
+      if (Math.abs(right[0]) === 10) {
+        right[0] = 1;
+        right[1]++;
       }
       return left[1] === right[1] ? left[0] === right[0] : false;
     },
     notEqual: (left, right) => {
-      if (!isFinite(left[0]) || !isFinite(right[0])) {
-        return left[0] !== right[0];
+      left[0] = Math.round(left[0] * 1e14) / 1e14;
+      right[0] = Math.round(right[0] * 1e14) / 1e14;
+      if (Math.abs(left[0]) === 10) {
+        left[0] = 1;
+        left[1]++;
+      }
+      if (Math.abs(right[0]) === 10) {
+        right[0] = 1;
+        right[1]++;
       }
       return left[1] !== right[1] ? true : left[0] !== right[0];
     },
@@ -354,7 +426,7 @@ export const overlimit = {
       } else if (left[1] === 0) {
         left[0] = Math.trunc(left[0]);
       } else if (left[1] <= 14) {
-        left[0] = Math.trunc(Math.round(left[0] * 10 ** 14) / 10 ** (14 - left[1])) / 10 ** left[1];
+        left[0] = Math.trunc(Math.round(left[0] * 1e14) / 10 ** (14 - left[1])) / 10 ** left[1];
       }
       return left;
     },
@@ -364,7 +436,7 @@ export const overlimit = {
       } else if (left[1] === 0) {
         left[0] = Math.floor(left[0]);
       } else if (left[1] <= 14) {
-        left[0] = Math.floor(Math.round(left[0] * 10 ** 14) / 10 ** (14 - left[1])) / 10 ** left[1];
+        left[0] = Math.floor(Math.round(left[0] * 1e14) / 10 ** (14 - left[1])) / 10 ** left[1];
       }
       return left;
     },
@@ -374,7 +446,7 @@ export const overlimit = {
       } else if (left[1] === 0) {
         left[0] = Math.ceil(left[0]);
       } else if (left[1] <= 14) {
-        left[0] = Math.ceil(Math.round(left[0] * 10 ** 14) / 10 ** (14 - left[1])) / 10 ** left[1];
+        left[0] = Math.ceil(Math.round(left[0] * 1e14) / 10 ** (14 - left[1])) / 10 ** left[1];
       }
       return left;
     },
@@ -384,14 +456,14 @@ export const overlimit = {
       } else if (left[1] === 0) {
         left[0] = Math.round(left[0]);
       } else if (left[1] <= 14) {
-        left[0] = Math.round(Math.round(left[0] * 10 ** 14) / 10 ** (14 - left[1])) / 10 ** left[1];
+        left[0] = Math.round(Math.round(left[0] * 1e14) / 10 ** (14 - left[1])) / 10 ** left[1];
       }
       return left;
     },
     format: (left, digits, type) => {
       const [base, power] = left;
       if (!isFinite(base) || !isFinite(power)) {
-        return overlimit.technical.convertBack(left, false);
+        return overlimit.technical.convertBack(left);
       }
       const { format: settings } = overlimit.settings;
       if ((power >= settings.maxPower || power <= -settings.maxPower) && type !== "input") {
@@ -400,8 +472,8 @@ export const overlimit = {
         }
         let exponent = Math.floor(Math.log10(Math.abs(power)));
         let result = Math.abs(Math.round(power / 10 ** (exponent - digits)) / 10 ** digits);
-        if (result >= 10) {
-          result /= 10;
+        if (result === 10) {
+          result = 1;
           exponent++;
         }
         if (base < 0) {
@@ -414,11 +486,13 @@ export const overlimit = {
         if (digits === null) {
           digits = settings.digits[1];
         }
-        let formated2 = `${Math.round(base * 10 ** digits) / 10 ** digits}`;
-        if (type !== "input") {
-          formated2 = formated2.replace(".", settings.point);
+        let exponent = power;
+        let result = Math.round(base * 10 ** digits) / 10 ** digits;
+        if (Math.abs(result) === 10) {
+          result = 1;
+          exponent++;
         }
-        return `${formated2}e${power}`;
+        return type !== "input" ? `${`${result}`.replace(".", settings.point)}e${exponent}` : `${result}e${exponent}`;
       }
       if (digits === null) {
         digits = settings.digits[0];
@@ -447,6 +521,9 @@ export const overlimit = {
       } else {
         result = [...number];
       }
+      if (!isFinite(result[0])) {
+        return isNaN(result[0]) ? [NaN, NaN] : [result[0], Infinity];
+      }
       if (Math.floor(result[1]) !== result[1]) {
         result[0] *= 10 ** (result[1] - Math.floor(result[1]));
         result[1] = Math.floor(result[1]);
@@ -454,7 +531,7 @@ export const overlimit = {
       const after = Math.abs(result[0]);
       if (after === 0) {
         result[1] = 0;
-      } else if (after < 1 || after >= 10 && isFinite(after)) {
+      } else if (after < 1 || after >= 10) {
         const digits = Math.floor(Math.log10(after));
         result[0] /= 10 ** digits;
         result[1] += digits;
@@ -462,11 +539,6 @@ export const overlimit = {
           result[0] *= 10;
           result[1]--;
         }
-      }
-      result[0] = Math.round(result[0] * 1e14) / 1e14;
-      if (Math.abs(result[0]) >= 10) {
-        result[0] /= 10;
-        result[1]++;
       }
       return result;
     },
@@ -478,28 +550,31 @@ export const overlimit = {
       }
       return result;
     },
-    prepare: (number, fixFloats) => {
+    prepare: (number) => {
       if (!isFinite(number[0]) || !isFinite(number[1])) {
         if (number[0] === 0 || number[1] < 0 && !isFinite(number[1])) {
           return [0, 0];
         }
-        return [isNaN(number[0]) || isNaN(number[1]) ? NaN : number[0] < 0 ? -Infinity : Infinity, 0];
+        return isNaN(number[0]) || isNaN(number[1]) ? [NaN, NaN] : [number[0], Infinity];
       }
       const maxPower = overlimit.settings.format.maxPower;
       if (number[1] >= maxPower || number[1] <= -maxPower) {
         const keep = 10 ** overlimit.settings.minDigits;
         number[0] = Math.round(number[0] * keep) / keep;
-      } else if (fixFloats) {
+      } else {
         number[0] = Math.round(number[0] * 1e14) / 1e14;
-        if (Math.abs(number[0]) >= 10) {
-          number[0] /= 10;
+        if (Math.abs(number[0]) === 10) {
+          number[0] = 1;
           number[1]++;
         }
       }
       return number;
     },
-    convertBack: (number, fixFloats) => {
-      number = overlimit.technical.prepare(number, fixFloats);
+    convertBack: (number) => {
+      number = overlimit.technical.prepare(number);
+      if (!isFinite(number[0])) {
+        return `${number[0]}`;
+      }
       if (Math.abs(number[1]) < 1e16) {
         return number[1] === 0 ? `${number[0]}` : `${number[0]}e${number[1]}`;
       }

@@ -17,8 +17,7 @@ Supports numbers from -1e1e308 to 1e1e308, small numbers included (1e-1e308)
 9. toNumber - returns answer in form of a number (Infinity if more than 2 ** 1024)
 10. toString - returns answer in form of a string (with can be turned into a number with Number())
 11. toArray - returns answer in form of an array, quickest but harder to mantain
-toNumber, toString, toArray have special boolean setting to fix floats (by default on false). \
-But only if you need proper result outside of Limit function. Because floats are auto fixed on first call
+Floats are only fixed when requesting an answer ('toString' alike) or comparison ('lessThan' alike) or trunc type
 ### Functions that are missing and won't be added:
 1. sqrt - use power function instead (4 ** 0.5 === 2)
 2. exp - use power function instead (Math.E ** 2)
