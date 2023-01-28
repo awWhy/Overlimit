@@ -271,7 +271,7 @@ export const overlimit = {
         },
         pow: (left: [number, number], power: number): [number, number] => {
             if (power === 0) { return [1, 0]; }
-            if (left[0] === 0) { return [0, 0]; }
+            if (left[0] === 0) { return power < 0 ? [NaN, NaN] : [0, 0]; }
             if (!isFinite(power)) {
                 if (left[1] === 0 && (left[0] === 1 || (left[0] === -1 && !isNaN(power)))) { return [1, 0]; }
                 if ((power === -Infinity && left[1] >= 0) || (power === Infinity && left[1] < 0)) { return [0, 0]; }
