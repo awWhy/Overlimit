@@ -27,4 +27,3 @@ Exponent isn't checked for being non finite on first call, only checked when rec
 2. '0 * Infinity', '0 * NaN' now returns 0 instead of NaN
 3. 'Infinity / 0' now returns NaN instead of Infinity
 4. '0 / NaN' now returns 0 instead of NaN
-5. 'NaN ** (-Infinity)' now returns 0 instead of NaN (I allow X ** (-Infinity) to be 0 because floating points)

@@ -285,12 +285,13 @@ export const overlimit = {
             }
 
             const base10 = power * (Math.log10(left[0]) + left[1]);
-            const target = Math.floor(base10);
             if (!isFinite(base10)) {
-                if (base10 === -Infinity) { return [0, 0]; }
                 if (isNaN(left[0])) { return [NaN, NaN]; }
+                if (base10 === -Infinity) { return [0, 0]; }
                 return [negative === 1 ? -Infinity : Infinity, Infinity];
             }
+
+            const target = Math.floor(base10);
             left[0] = 10 ** (base10 - target);
             left[1] = target;
 
@@ -301,7 +302,7 @@ export const overlimit = {
             if (Math.abs(base) === 1 || (left[0] === -1 && left[1] === 0)) { return [NaN, NaN]; }
             if (left[0] === 1 && left[1] === 0) { return [0, 0]; }
             if (base === 0) { return [NaN, NaN]; } //Order matters (0 ** 0 === 1)
-            if (left[0] === 0) { return [Math.abs(base) < 1 ? Infinity : -Infinity, Infinity]; } //NaN should get -Infinity
+            if (left[0] === 0) { return isNaN(base) ? [NaN, NaN] : [Math.abs(base) > 1 ? -Infinity : Infinity, Infinity]; }
             if (!isFinite(base)) { return [NaN, NaN]; } //Order matters (Infinity ** 0 === 1 || Infinity ** -Infinity === 0)
             if (!isFinite(left[0])) {
                 if (isNaN(left[0]) || left[0] === -Infinity) { return [NaN, NaN]; }

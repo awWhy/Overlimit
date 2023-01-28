@@ -226,16 +226,16 @@ export const overlimit = {
         left[0] *= -1;
       }
       const base10 = power * (Math.log10(left[0]) + left[1]);
-      const target = Math.floor(base10);
       if (!isFinite(base10)) {
-        if (base10 === -Infinity) {
-          return [0, 0];
-        }
         if (isNaN(left[0])) {
           return [NaN, NaN];
         }
+        if (base10 === -Infinity) {
+          return [0, 0];
+        }
         return [negative === 1 ? -Infinity : Infinity, Infinity];
       }
+      const target = Math.floor(base10);
       left[0] = 10 ** (base10 - target);
       left[1] = target;
       if (negative === 1) {
@@ -254,7 +254,7 @@ export const overlimit = {
         return [NaN, NaN];
       }
       if (left[0] === 0) {
-        return [Math.abs(base) < 1 ? Infinity : -Infinity, Infinity];
+        return isNaN(base) ? [NaN, NaN] : [Math.abs(base) > 1 ? -Infinity : Infinity, Infinity];
       }
       if (!isFinite(base)) {
         return [NaN, NaN];
