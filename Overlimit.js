@@ -133,42 +133,43 @@ export const overlimit = {
   },
   /* Private functions */
   technical: {
-    //Main calculations
+    /* Main calculations */
+    //No abs, isNaN, isFinite because they are too simple
+    //No max, min instead on spot it will call comparison function (.more())
     add: (left, right) => {
-      if (!isFinite(left[0]) || !isFinite(right[0])) {
-        const check = left[0] + right[0];
-        return isNaN(left[0]) || isNaN(right[0]) || isNaN(check) ? [NaN, NaN] : [check, Infinity];
-      }
       if (right[0] === 0) {
         return left;
       }
       if (left[0] === 0) {
         return right;
       }
+      if (!isFinite(left[0]) || !isFinite(right[0])) {
+        const check = left[0] + right[0];
+        return isNaN(left[0]) || isNaN(right[0]) || isNaN(check) ? [NaN, NaN] : [check, Infinity];
+      }
       const difference = left[1] - right[1];
       if (Math.abs(difference) >= 14) {
         return difference > 0 ? left : right;
-      } else {
-        if (difference === 0) {
-          left[0] += right[0];
-        } else if (difference > 0) {
-          left[0] += right[0] / 10 ** difference;
-        } else {
-          right[0] += left[0] / 10 ** -difference;
-          left = right;
-        }
-        const after = Math.abs(left[0]);
-        if (after === 0) {
-          left[1] = 0;
-        } else if (after >= 10) {
-          left[0] /= 10;
-          left[1]++;
-        } else if (after < 1) {
-          left[0] *= 10;
-          left[1]--;
-        }
-        return left;
       }
+      if (difference === 0) {
+        left[0] += right[0];
+      } else if (difference > 0) {
+        left[0] += right[0] / 10 ** difference;
+      } else {
+        right[0] += left[0] / 10 ** -difference;
+        left = right;
+      }
+      const after = Math.abs(left[0]);
+      if (after === 0) {
+        left[1] = 0;
+      } else if (after >= 10) {
+        left[0] /= 10;
+        left[1]++;
+      } else if (after < 1) {
+        left[0] *= 10;
+        left[1]--;
+      }
+      return left;
     },
     sub: (left, right) => {
       right[0] *= -1;
@@ -189,7 +190,8 @@ export const overlimit = {
     div: (left, right) => {
       if (right[0] === 0) {
         return [NaN, NaN];
-      } else if (left[0] === 0) {
+      }
+      if (left[0] === 0) {
         return [0, 0];
       }
       left[1] -= right[1];
@@ -203,53 +205,68 @@ export const overlimit = {
     pow: (left, power) => {
       if (power === 0) {
         return [1, 0];
-      } else if (left[0] === 0) {
-        return [0, 0];
-      } else {
-        const negative = left[0] < 0 ? Math.abs(power) % 2 : null;
-        if (negative !== null) {
-          if (Math.floor(power) !== power) {
-            return [NaN, NaN];
-          }
-          left[0] *= -1;
-        }
-        if (!isFinite(power)) {
-          if (power < 0) {
-            return [0, 0];
-          }
-          if (isNaN(power) || isNaN(left[0])) {
-            return [NaN, NaN];
-          }
-          return [negative === 1 ? -Infinity : Infinity, Infinity];
-        }
-        const base10 = power * (Math.log10(left[0]) + left[1]);
-        const target = Math.floor(base10);
-        if (!isFinite(base10)) {
-          if (base10 < 0) {
-            return [0, 0];
-          }
-          return isNaN(left[0]) ? [NaN, NaN] : [negative === 1 ? -Infinity : Infinity, Infinity];
-        }
-        left[0] = 10 ** (base10 - target);
-        left[1] = target;
-        if (negative === 1) {
-          left[0] *= -1;
-        }
-        return left;
       }
+      if (left[0] === 0) {
+        return [0, 0];
+      }
+      if (!isFinite(power)) {
+        if (left[1] === 0 && (left[0] === 1 || left[0] === -1 && !isNaN(power))) {
+          return [1, 0];
+        }
+        if (power === -Infinity && left[1] >= 0 || power === Infinity && left[1] < 0) {
+          return [0, 0];
+        }
+        return isNaN(power) || isNaN(left[0]) ? [NaN, NaN] : [Infinity, Infinity];
+      }
+      const negative = left[0] < 0 ? Math.abs(power) % 2 : null;
+      if (negative !== null) {
+        if (Math.floor(power) !== power) {
+          return [NaN, NaN];
+        }
+        left[0] *= -1;
+      }
+      const base10 = power * (Math.log10(left[0]) + left[1]);
+      const target = Math.floor(base10);
+      if (!isFinite(base10)) {
+        if (base10 === -Infinity) {
+          return [0, 0];
+        }
+        if (isNaN(left[0])) {
+          return [NaN, NaN];
+        }
+        return [negative === 1 ? -Infinity : Infinity, Infinity];
+      }
+      left[0] = 10 ** (base10 - target);
+      left[1] = target;
+      if (negative === 1) {
+        left[0] *= -1;
+      }
+      return left;
     },
     log: (left, base) => {
-      const negative = left[0] < 0;
+      if (Math.abs(base) === 1 || left[0] === -1 && left[1] === 0) {
+        return [NaN, NaN];
+      }
       if (left[0] === 1 && left[1] === 0) {
         return [0, 0];
-      } else if (base === 0 || base === 1 || !isFinite(base)) {
+      }
+      if (base === 0) {
         return [NaN, NaN];
-      } else if (!isFinite(left[0])) {
-        return isNaN(left[0]) || negative ? [NaN, NaN] : [Infinity, Infinity];
-      } else if (left[0] <= 0) {
-        if (left[0] === 0) {
-          return [-Infinity, Infinity];
+      }
+      if (left[0] === 0) {
+        return [Math.abs(base) < 1 ? Infinity : -Infinity, Infinity];
+      }
+      if (!isFinite(base)) {
+        return [NaN, NaN];
+      }
+      if (!isFinite(left[0])) {
+        if (isNaN(left[0]) || left[0] === -Infinity) {
+          return [NaN, NaN];
         }
+        return [Math.abs(base) < 1 ? -Infinity : Infinity, Infinity];
+      }
+      const negative = left[0] < 0;
+      if (negative) {
         if (base > 0) {
           return [NaN, NaN];
         }
@@ -276,8 +293,8 @@ export const overlimit = {
         if (left[1] < 0) {
           return [NaN, NaN];
         }
-        const test = left[1] < 16 ? Math.round(left[0] * 1e14) / 10 ** (14 - left[1]) % 2 : (
-          //First remove error from floats (while keeping floats) then find if even
+        const test = left[1] < 16 ? Math.abs(Math.round(left[0] * 1e14) / 10 ** (14 - left[1])) % 2 : (
+          //Fix floats and find if even
           0
         );
         if (base < 0 && !negative) {
@@ -292,7 +309,6 @@ export const overlimit = {
       }
       return left;
     },
-    //abs, isNaN, isFinite are not there because used version is way too different
     less: (left, right) => {
       left[0] = Math.round(left[0] * 1e14) / 1e14;
       right[0] = Math.round(right[0] * 1e14) / 1e14;
@@ -419,7 +435,6 @@ export const overlimit = {
       }
       return left[1] !== right[1] ? true : left[0] !== right[0];
     },
-    //No max, min instead on spot it will call comparison function (.more())
     trunc: (left) => {
       if (left[1] < 0) {
         return [0, 0];
@@ -509,7 +524,7 @@ export const overlimit = {
       }
       return formated;
     },
-    //Special functions
+    /* Convertion functions */
     convert: (number) => {
       let result;
       if (typeof number !== "object") {
@@ -552,7 +567,7 @@ export const overlimit = {
     },
     prepare: (number) => {
       if (!isFinite(number[0]) || !isFinite(number[1])) {
-        if (number[0] === 0 || number[1] < 0 && !isFinite(number[1])) {
+        if (number[0] === 0 || number[1] === -Infinity) {
           return [0, 0];
         }
         return isNaN(number[0]) || isNaN(number[1]) ? [NaN, NaN] : [number[0], Infinity];
