@@ -23,12 +23,13 @@
         Really big numbers shown as '2e-e20' ('1e-2e20') or '-2ee20' ('-1e2e20')
 
         To get the result:
-        toNumber - returns a number (must be bellow 2 ** 1024)
-        toString - returns a string (can be turned into a number with Number())
-        toArray - returns a array, quickest, but JS reference issues will become a problem (will need to clone it [...number], Limit auto clones)
+        toNumber - returns a Number (Must be bellow 2 ** 1024)
+        toString - returns a String (Can be turned into a Number with JS default function)
+        toArray - returns a Array (Fastest, but hardest to use, need to clone Arrays [number[0], number[1]]; Limit already auto clones)
 
     Non chainable: (LimitAlt.abs('-2'))
         abs, isFinite, isNaN - Strings only, faster methods (if it was a string already)
+        clone - Clones your Array (in fastest way)
 
     Won't be added:
         sqrt or any other rootes - Use .power(0.5) instead
@@ -56,7 +57,6 @@
     format: Add padding setting: 1ee2 > 1.00ee2
     format: Add format for power with a special separator: 1e12345 > 1e12,345 (?)
     convert: Allow sent string '1e1e2' to look like '1ee2'
-    general: Using JS loophole with changing array reference, can allow to change inserted array without need to do .toArray() at the end
     testing area: Once I'm done with my game, might add website where with calculator for testing
 */
 
@@ -198,7 +198,8 @@ export const overlimit = {
         //Faster methods (?), because no need to convert in both directions
         abs: (number: string): string => number[0] === '-' ? number.substring(1) : number,
         isNaN: (number: string): boolean => number.includes('NaN'),
-        isFinite: (number: string): boolean => !number.includes('Infinity') && !number.includes('NaN')
+        isFinite: (number: string): boolean => !number.includes('Infinity') && !number.includes('NaN'),
+        clone: (number: [number, number]): [number, number] => [number[0], number[1]]
     },
     /* Private functions */
     technical: {
@@ -543,7 +544,7 @@ export const overlimit = {
                 const index = number.indexOf('e'); //About 5+ times quicker than regex
                 result = index === -1 ? [Number(number), 0] : [Number(number.slice(0, index)), Number(number.slice(index + 1))];
             } else {
-                result = [...number]; //Not instant return, because might need a fix
+                result = [number[0], number[1]]; //Not instant return, because might need a fix
             }
 
             if (!isFinite(result[0])) { return isNaN(result[0]) ? [NaN, NaN] : [result[0], Infinity]; }
