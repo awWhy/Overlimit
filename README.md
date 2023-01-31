@@ -17,7 +17,7 @@ Supports numbers from -1e1e308 to 1e1e308, small numbers included (1e-1e308)
 8. format - because numbers when converted into string or array shown as 1e1 instead of 10
 9. toNumber - returns result in form of a Number (Infinity if more than 2 ** 1024)
 10. toString - returns result in form of a String (Can be turned into a Number with JS default function)
-11. toArray - returns result in form of an Array (Fastest, but hardest to use, need to know JS references)
+11. toArray - returns result in form of an Array (Fastest, but hardest to use, need to know JS references) \
 Fastest is Limit(array).toArray() (~27% faster, than Limit(string).toString()) \
 LimitAlt has faster way to do abs, isNaN, isFinite, but only if it's a String \
 LimitAlt has faster way to clone (LimitAlt.clone()), but only if it's a Array of type [number, number] \
