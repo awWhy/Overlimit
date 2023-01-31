@@ -129,7 +129,8 @@ export const overlimit = {
     //Faster methods (?), because no need to convert in both directions
     abs: (number) => number[0] === "-" ? number.substring(1) : number,
     isNaN: (number) => number.includes("NaN"),
-    isFinite: (number) => !number.includes("Infinity") && !number.includes("NaN")
+    isFinite: (number) => !number.includes("Infinity") && !number.includes("NaN"),
+    clone: (number) => [number[0], number[1]]
   },
   /* Private functions */
   technical: {
@@ -534,7 +535,7 @@ export const overlimit = {
         const index = number.indexOf("e");
         result = index === -1 ? [Number(number), 0] : [Number(number.slice(0, index)), Number(number.slice(index + 1))];
       } else {
-        result = [...number];
+        result = [number[0], number[1]];
       }
       if (!isFinite(result[0])) {
         return isNaN(result[0]) ? [NaN, NaN] : [result[0], Infinity];
