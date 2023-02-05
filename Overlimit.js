@@ -7,7 +7,12 @@ export const overlimit = {
       //Calling function with type === 'input', will ignore point and separator, also number never turned into 1ee2
       digits: [4, 2],
       //Digits past point [max, min]
-      //padding: true, //Will add missing digits at numbers bigger than 1e6 (1.00e6)
+      padding: true,
+      //Will add missing digits past point
+      //Max is used when when numbers like 0.0001 (exponent < 0)
+      //For numbers with exponent of 3+ (before next convert), digits past point always 0
+      //Min is used any other time
+      //If sent object is missing max, then it will check min, before using default (this one's)
       power: [6, -3],
       //When convert into: example 1000000 > 1e6; [+, -]
       maxPower: 1e3,
@@ -119,7 +124,7 @@ export const overlimit = {
         }
         return this;
       },
-      format: (digits = null, type = "number") => technical.format(result, digits, type),
+      format: (settings = {}) => technical.format(result, settings),
       toNumber: () => Number(technical.convertBack(result)),
       toString: () => technical.convertBack(result),
       toArray: () => technical.prepare(result)
@@ -476,18 +481,17 @@ export const overlimit = {
       }
       return left;
     },
-    format: (left, digits, type) => {
+    format: (left, settings) => {
+      var _a, _b, _c, _d, _e, _f, _g, _h;
       const [base, power] = left;
       if (!isFinite(base) || !isFinite(power)) {
         return overlimit.technical.convertBack(left);
       }
-      const { format: settings } = overlimit.settings;
-      if ((power >= settings.maxPower || power <= -settings.maxPower) && type !== "input") {
-        if (digits === null) {
-          digits = settings.digits[1];
-        }
+      const { format: setting } = overlimit.settings;
+      if ((power >= setting.maxPower || power <= -setting.maxPower) && settings.type !== "input") {
+        const digits2 = (_a = settings.minDigits) != null ? _a : setting.digits[1];
         let exponent = Math.floor(Math.log10(Math.abs(power)));
-        let result = Math.abs(Math.round(power / 10 ** (exponent - digits)) / 10 ** digits);
+        let result = Math.abs(Math.round(power / 10 ** (exponent - digits2)) / 10 ** digits2);
         if (result === 10) {
           result = 1;
           exponent++;
@@ -495,33 +499,27 @@ export const overlimit = {
         if (base < 0) {
           result *= -1;
         }
-        const formated2 = `${result}`.replace(".", settings.point);
+        const formated2 = ((_b = settings.padding) != null ? _b : setting.padding) ? result.toFixed(digits2).replace(".", setting.point) : `${result}`.replace(".", setting.point);
         return `${formated2}e${power < 0 ? "-" : ""}e${exponent}`;
       }
-      if (power >= settings.power[0] || power < settings.power[1]) {
-        if (digits === null) {
-          digits = settings.digits[1];
-        }
+      if (power >= setting.power[0] || power < setting.power[1]) {
+        const digits2 = (_c = settings.minDigits) != null ? _c : setting.digits[1];
         let exponent = power;
-        let result = Math.round(base * 10 ** digits) / 10 ** digits;
+        let result = Math.round(base * 10 ** digits2) / 10 ** digits2;
         if (Math.abs(result) === 10) {
           result = 1;
           exponent++;
         }
-        return type !== "input" ? `${`${result}`.replace(".", settings.point)}e${exponent}` : `${result}e${exponent}`;
-      }
-      if (digits === null) {
-        digits = settings.digits[0];
-      }
-      if (power >= 3 && digits > 2) {
-        digits = 2;
-      }
-      let formated = `${Math.round(base * 10 ** (digits + power)) / 10 ** digits}`;
-      if (type !== "input") {
-        formated = formated.replace(".", settings.point);
-        if (power >= 3) {
-          formated = formated.replace(/\B(?=(\d{3})+(?!\d))/g, settings.separator);
+        if ((_d = settings.padding) != null ? _d : setting.padding) {
+          result = result.toFixed(digits2);
         }
+        return settings.type !== "input" ? `${`${result}`.replace(".", setting.point)}e${exponent}` : `${result}e${exponent}`;
+      }
+      const digits = power >= 3 ? 0 : power < 0 ? (_f = (_e = settings.maxDigits) != null ? _e : settings.minDigits) != null ? _f : setting.digits[0] : (_g = settings.minDigits) != null ? _g : setting.digits[1];
+      let formated = Math.round(base * 10 ** (digits + power)) / 10 ** digits;
+      formated = ((_h = settings.padding) != null ? _h : setting.padding) && digits > 0 ? formated.toFixed(digits) : `${formated}`;
+      if (settings.type !== "input") {
+        formated = power >= 3 ? formated.replace(/\B(?=(\d{3})+(?!\d))/g, setting.separator) : formated.replace(".", setting.point);
       }
       return formated;
     },
