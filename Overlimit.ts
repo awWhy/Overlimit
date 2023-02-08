@@ -452,45 +452,69 @@ export const overlimit = {
             return left[1] !== right[1] ? true : left[0] !== right[0];
         },
         trunc: (left: [number, number]): [number, number] => {
+            left[0] = Math.round(left[0] * 1e14) / 1e14; //Fix floats
+            if (Math.abs(left[0]) === 10) {
+                left[0] = 1;
+                left[1]++;
+            }
+
             if (left[1] < 0) {
                 return [0, 0];
             } else if (left[1] === 0) {
                 left[0] = Math.trunc(left[0]);
-            } else if (left[1] <= 14) { //Fix floats first
-                left[0] = Math.trunc(Math.round(left[0] * 1e14) / 10 ** (14 - left[1])) / 10 ** left[1];
+            } else if (left[1] <= 14) {
+                left[0] = Math.trunc(left[0] * 10 ** left[1]) / 10 ** left[1];
             }
 
             return left;
         },
         floor: (left: [number, number]): [number, number] => {
+            left[0] = Math.round(left[0] * 1e14) / 1e14; //Fix floats
+            if (Math.abs(left[0]) === 10) {
+                left[0] = 1;
+                left[1]++;
+            }
+
             if (left[1] < 0) {
                 return [left[0] < 0 ? -1 : 0, 0];
             } else if (left[1] === 0) {
                 left[0] = Math.floor(left[0]);
-            } else if (left[1] <= 14) { //Fix floats first
-                left[0] = Math.floor(Math.round(left[0] * 1e14) / 10 ** (14 - left[1])) / 10 ** left[1];
+            } else if (left[1] <= 14) {
+                left[0] = Math.floor(left[0] * 10 ** left[1]) / 10 ** left[1];
             }
 
             return left;
         },
         ceil: (left: [number, number]): [number, number] => {
+            left[0] = Math.round(left[0] * 1e14) / 1e14; //Fix floats
+            if (Math.abs(left[0]) === 10) {
+                left[0] = 1;
+                left[1]++;
+            }
+
             if (left[1] < 0) {
                 return [left[0] < 0 ? 0 : 1, 0];
             } else if (left[1] === 0) {
                 left[0] = Math.ceil(left[0]);
-            } else if (left[1] <= 14) { //Fix floats first
-                left[0] = Math.ceil(Math.round(left[0] * 1e14) / 10 ** (14 - left[1])) / 10 ** left[1];
+            } else if (left[1] <= 14) {
+                left[0] = Math.ceil(left[0] * 10 ** left[1]) / 10 ** left[1];
             }
 
             return left;
         },
         round: (left: [number, number]): [number, number] => {
+            left[0] = Math.round(left[0] * 1e14) / 1e14; //Fix floats
+            if (Math.abs(left[0]) === 10) {
+                left[0] = 1;
+                left[1]++;
+            }
+
             if (left[1] < 0) {
                 return [left[1] === -1 ? Math.round(left[0] / 10) : 0, 0];
             } else if (left[1] === 0) {
                 left[0] = Math.round(left[0]);
-            } else if (left[1] <= 14) { //Fix floats first
-                left[0] = Math.round(Math.round(left[0] * 1e14) / 10 ** (14 - left[1])) / 10 ** left[1];
+            } else if (left[1] <= 14) {
+                left[0] = Math.round(left[0] * 10 ** left[1]) / 10 ** left[1];
             }
 
             return left;
