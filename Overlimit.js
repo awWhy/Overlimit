@@ -210,7 +210,7 @@ export const overlimit = {
     },
     pow: (left, power) => {
       if (power === 0) {
-        return [1, 0];
+        return left[0] === 0 || !isFinite(left[0]) ? [NaN, NaN] : [1, 0];
       }
       if (left[0] === 0) {
         return power < 0 ? [NaN, NaN] : [0, 0];

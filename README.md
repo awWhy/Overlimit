@@ -28,6 +28,7 @@ Also there is no protection for Exponent being non finite on first call (Only en
 2. exp - use power function instead (Math.E ** 2)
 #### Altered JS rules:
 1. '-+1 ** Infinity', '1 ** NaN' now returns 1 instead of NaN
-2. '0 * Infinity', '0 * NaN' now returns 0 instead of NaN
-3. 'Infinity / 0' now returns NaN instead of Infinity
-4. '0 / NaN' now returns 0 instead of NaN
+2. '0 ** 0', 'Infinity ** 0', 'NaN ** 0' now retuns NaN instead of 1
+3. '0 * Infinity', '0 * NaN' now returns 0 instead of NaN
+4. 'Infinity / 0' now returns NaN instead of Infinity
+5. '0 / NaN' now returns 0 instead of NaN
