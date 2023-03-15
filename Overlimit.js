@@ -575,6 +575,11 @@ export const overlimit = {
           result[1]--;
         }
       }
+      result[0] = Math.round(result[0] * 1e14) / 1e14;
+      if (Math.abs(result[0]) >= 10) {
+        result[0] /= 10;
+        result[1]++;
+      }
       return result;
     },
     convertAll: (numbers) => {
@@ -595,17 +600,17 @@ export const overlimit = {
         }
         return [number[0] < 0 ? -Infinity : Infinity, Infinity];
       }
-      number[0] = Math.round(number[0] * 1e14) / 1e14;
-      if (Math.abs(number[0]) === 10) {
-        number[0] = 1;
-        number[1]++;
-      }
       return number;
     },
     convertBack: (number) => {
       number = overlimit.technical.prepare(number);
       if (!isFinite(number[0])) {
         return `${number[0]}`;
+      }
+      number[0] = Math.round(number[0] * 1e14) / 1e14;
+      if (Math.abs(number[0]) >= 10) {
+        number[0] = 1;
+        number[1]++;
       }
       if (Math.abs(number[1]) < 1e16) {
         return number[1] === 0 ? `${number[0]}` : `${number[0]}e${number[1]}`;

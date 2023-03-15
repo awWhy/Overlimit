@@ -2,6 +2,7 @@
 ## Alternative to Break Infinity
 Should have 0 dependicies (if not, then I set it up wrong) \
 Curretly being worked on. But should be stable now \
+Due to constant fixing of Floating errors, numbers can end up being a little bigger than they should be \
 To use, just download .ts or .js (JS auto created by esbuild) file of Overlimit \
 Start with Limit(yourNumber).functionYouNeed().get() \
 Supports numbers from -1e1e308 to 1e1e308, small numbers included (1e-1e308)
