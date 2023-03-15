@@ -547,7 +547,7 @@ export const overlimit = {
     /* Convertion functions */
     convert: (number) => {
       let result;
-      if (typeof number !== "object") {
+      if (typeof number !== "object" || number === null) {
         if (typeof number !== "string") {
           number = `${number}`;
         }
