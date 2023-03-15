@@ -72,7 +72,7 @@ export const overlimit = {
             //Min is used any other time
             //If sent object is missing max, then it will check min, before using default (this one's)
             power: [6, -3], //When convert into: example 1000000 > 1e6; [+, -]
-            maxPower: 1e3, //When convert into: 1e2345 > 2.34ee3; [+, -] (power is never formated)
+            maxPower: 1e4, //When convert into: 1e2345 > 2.34ee3; [+, -] (power is never formated)
             point: '.', //What should be used instead of dot; example 1.21 > 1,21
             separator: '' //What should be used as a thousand separator; example 1200 > 1 200
         }
@@ -623,17 +623,10 @@ export const overlimit = {
                 return [number[0] < 0 ? -Infinity : Infinity, Infinity]; //Base can be non Infinity
             }
 
-            const maxPower = overlimit.settings.format.maxPower;
-            if (number[1] >= maxPower || number[1] <= -maxPower) {
-                const keep = 10 ** overlimit.settings.minDigits;
-                number[0] = Math.round(number[0] * keep) / keep;
-            } else {
-                number[0] = Math.round(number[0] * 1e14) / 1e14;
-
-                if (Math.abs(number[0]) === 10) { //Just in case
-                    number[0] = 1;
-                    number[1]++;
-                }
+            number[0] = Math.round(number[0] * 1e14) / 1e14;
+            if (Math.abs(number[0]) === 10) { //Just in case
+                number[0] = 1;
+                number[1]++;
             }
 
             return number;
