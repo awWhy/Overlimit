@@ -154,7 +154,7 @@ export const overlimit = {
         return isNaN(left[0]) || isNaN(right[0]) || isNaN(check) ? [NaN, NaN] : [check, Infinity];
       }
       const difference = left[1] - right[1];
-      if (Math.abs(difference) >= 14) {
+      if (Math.abs(difference) > 15) {
         return difference > 0 ? left : right;
       }
       if (difference === 0) {

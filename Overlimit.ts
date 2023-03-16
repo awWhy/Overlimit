@@ -219,7 +219,7 @@ export const overlimit = {
             }
 
             const difference = left[1] - right[1];
-            if (Math.abs(difference) >= 14) { return difference > 0 ? left : right; }
+            if (Math.abs(difference) > 15) { return difference > 0 ? left : right; }
 
             if (difference === 0) {
                 left[0] += right[0];
