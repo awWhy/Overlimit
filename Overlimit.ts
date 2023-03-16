@@ -242,6 +242,12 @@ export const overlimit = {
                 left[1] -= digits;
             }
 
+            left[0] = Math.round(left[0] * 1e14) / 1e14;
+            if (Math.abs(left[0]) === 10) {
+                left[0] = 1;
+                left[1]++;
+            }
+
             return left;
         },
         sub: (left: [number, number], right: [number, number]): [number, number] => {
@@ -259,6 +265,12 @@ export const overlimit = {
                 left[1]++;
             }
 
+            left[0] = Math.round(left[0] * 1e14) / 1e14;
+            if (Math.abs(left[0]) === 10) {
+                left[0] = 1;
+                left[1]++;
+            }
+
             return left;
         },
         div: (left: [number, number], right: [number, number]): [number, number] => {
@@ -271,6 +283,12 @@ export const overlimit = {
             if (Math.abs(left[0]) < 1) {
                 left[0] *= 10;
                 left[1]--;
+            }
+
+            left[0] = Math.round(left[0] * 1e14) / 1e14;
+            if (Math.abs(left[0]) === 10) {
+                left[0] = 1;
+                left[1]++;
             }
 
             return left;
@@ -300,6 +318,12 @@ export const overlimit = {
             const target = Math.floor(base10);
             left[0] = 10 ** (base10 - target);
             left[1] = target;
+
+            left[0] = Math.round(left[0] * 1e14) / 1e14;
+            if (left[0] === 10) {
+                left[0] = 1;
+                left[1]++;
+            }
 
             if (negative === 1) { left[0] *= -1; }
             return left;
@@ -341,29 +365,24 @@ export const overlimit = {
 
             if (base < 0 || negative) { //Special test for negative numbers
                 if (left[1] < 0) { return [NaN, NaN]; }
-                const test = left[1] < 16 ?
-                    Math.abs(Math.round(left[0] * 1e14) / 10 ** (14 - left[1])) % 2 : //Fix floats and find if even
-                    0; //Assuming that big numbers never uneven
+                //Due to floats (1.1 * 100 !== 110), test is done in this way (also we assume that numbers are never uneven)
+                const test = left[1] < 16 ? Math.abs(Math.round(left[0] * 1e14) / 10 ** (14 - left[1])) % 2 : 0;
                 if (base < 0 && !negative) {
                     if (test !== 0) { return [NaN, NaN]; } //Result must be even
                 } else { //base < 0 && negative
                     if (test !== 1) { return [NaN, NaN]; } //Result must be uneven
                 }
             }
-            return left;
-        },
-        less: (left: [number, number], right: [number, number]): boolean => {
-            left[0] = Math.round(left[0] * 1e14) / 1e14; //Fix floats
-            right[0] = Math.round(right[0] * 1e14) / 1e14;
+
+            left[0] = Math.round(left[0] * 1e14) / 1e14;
             if (Math.abs(left[0]) === 10) {
                 left[0] = 1;
                 left[1]++;
             }
-            if (Math.abs(right[0]) === 10) {
-                right[0] = 1;
-                right[1]++;
-            }
 
+            return left;
+        },
+        less: (left: [number, number], right: [number, number]): boolean => {
             if (left[0] === 0 || right[0] === 0 || left[1] === right[1]) { return left[0] < right[0]; }
             if (left[0] > 0 && right[0] > 0) { return left[1] < right[1]; }
             if (left[0] < 0 && right[0] > 0) { return true; }
@@ -371,17 +390,6 @@ export const overlimit = {
             return left[1] > right[1];
         },
         lessOrEqual: (left: [number, number], right: [number, number]): boolean => {
-            left[0] = Math.round(left[0] * 1e14) / 1e14; //Fix floats
-            right[0] = Math.round(right[0] * 1e14) / 1e14;
-            if (Math.abs(left[0]) === 10) {
-                left[0] = 1;
-                left[1]++;
-            }
-            if (Math.abs(right[0]) === 10) {
-                right[0] = 1;
-                right[1]++;
-            }
-
             if (left[0] === 0 || right[0] === 0 || left[1] === right[1]) { return left[0] <= right[0]; }
             if (left[0] > 0 && right[0] > 0) { return left[1] < right[1]; }
             if (left[0] < 0 && right[0] > 0) { return true; }
@@ -389,17 +397,6 @@ export const overlimit = {
             return left[1] > right[1];
         },
         more: (left: [number, number], right: [number, number]): boolean => {
-            left[0] = Math.round(left[0] * 1e14) / 1e14; //Fix floats
-            right[0] = Math.round(right[0] * 1e14) / 1e14;
-            if (Math.abs(left[0]) === 10) {
-                left[0] = 1;
-                left[1]++;
-            }
-            if (Math.abs(right[0]) === 10) {
-                right[0] = 1;
-                right[1]++;
-            }
-
             if (left[0] === 0 || right[0] === 0 || left[1] === right[1]) { return left[0] > right[0]; }
             if (left[0] > 0 && right[0] > 0) { return left[1] > right[1]; }
             if (left[0] < 0 && right[0] > 0) { return false; }
@@ -407,17 +404,6 @@ export const overlimit = {
             return left[1] < right[1];
         },
         moreOrEqual: (left: [number, number], right: [number, number]): boolean => {
-            left[0] = Math.round(left[0] * 1e14) / 1e14; //Fix floats
-            right[0] = Math.round(right[0] * 1e14) / 1e14;
-            if (Math.abs(left[0]) === 10) {
-                left[0] = 1;
-                left[1]++;
-            }
-            if (Math.abs(right[0]) === 10) {
-                right[0] = 1;
-                right[1]++;
-            }
-
             if (left[0] === 0 || right[0] === 0 || left[1] === right[1]) { return left[0] >= right[0]; }
             if (left[0] > 0 && right[0] > 0) { return left[1] > right[1]; }
             if (left[0] < 0 && right[0] > 0) { return false; }
@@ -425,40 +411,12 @@ export const overlimit = {
             return left[1] < right[1];
         },
         equal: (left: [number, number], right: [number, number]): boolean => {
-            left[0] = Math.round(left[0] * 1e14) / 1e14; //Fix floats
-            right[0] = Math.round(right[0] * 1e14) / 1e14;
-            if (Math.abs(left[0]) === 10) {
-                left[0] = 1;
-                left[1]++;
-            }
-            if (Math.abs(right[0]) === 10) {
-                right[0] = 1;
-                right[1]++;
-            }
-
             return left[1] === right[1] ? left[0] === right[0] : false;
         },
         notEqual: (left: [number, number], right: [number, number]): boolean => {
-            left[0] = Math.round(left[0] * 1e14) / 1e14; //Fix floats
-            right[0] = Math.round(right[0] * 1e14) / 1e14;
-            if (Math.abs(left[0]) === 10) {
-                left[0] = 1;
-                left[1]++;
-            }
-            if (Math.abs(right[0]) === 10) {
-                right[0] = 1;
-                right[1]++;
-            }
-
             return left[1] !== right[1] ? true : left[0] !== right[0];
         },
         trunc: (left: [number, number]): [number, number] => {
-            left[0] = Math.round(left[0] * 1e14) / 1e14; //Fix floats
-            if (Math.abs(left[0]) === 10) {
-                left[0] = 1;
-                left[1]++;
-            }
-
             if (left[1] < 0) {
                 return [0, 0];
             } else if (left[1] === 0) {
@@ -470,12 +428,6 @@ export const overlimit = {
             return left;
         },
         floor: (left: [number, number]): [number, number] => {
-            left[0] = Math.round(left[0] * 1e14) / 1e14; //Fix floats
-            if (Math.abs(left[0]) === 10) {
-                left[0] = 1;
-                left[1]++;
-            }
-
             if (left[1] < 0) {
                 return [left[0] < 0 ? -1 : 0, 0];
             } else if (left[1] === 0) {
@@ -487,12 +439,6 @@ export const overlimit = {
             return left;
         },
         ceil: (left: [number, number]): [number, number] => {
-            left[0] = Math.round(left[0] * 1e14) / 1e14; //Fix floats
-            if (Math.abs(left[0]) === 10) {
-                left[0] = 1;
-                left[1]++;
-            }
-
             if (left[1] < 0) {
                 return [left[0] < 0 ? 0 : 1, 0];
             } else if (left[1] === 0) {
@@ -504,12 +450,6 @@ export const overlimit = {
             return left;
         },
         round: (left: [number, number]): [number, number] => {
-            left[0] = Math.round(left[0] * 1e14) / 1e14; //Fix floats
-            if (Math.abs(left[0]) === 10) {
-                left[0] = 1;
-                left[1]++;
-            }
-
             if (left[1] < 0) {
                 return [left[1] === -1 ? Math.round(left[0] / 10) : 0, 0];
             } else if (left[1] === 0) {
@@ -599,16 +539,16 @@ export const overlimit = {
                 result[0] /= 10 ** digits;
                 result[1] += digits;
 
-                //Safety for functions like 'trunc', 'less'
                 if (Math.abs(result[0]) < 1) { //Happens more often than you would think
                     result[0] *= 10;
                     result[1]--;
                 }
             }
 
-            result[0] = Math.round(result[0] * 1e14) / 1e14; //Safety
-            if (Math.abs(result[0]) >= 10) {
-                result[0] /= 10;
+            //Float fix always done after exponent, because (11.1 / 10 !== 1.11)
+            result[0] = Math.round(result[0] * 1e14) / 1e14;
+            if (Math.abs(result[0]) === 10) {
+                result[0] = 1;
                 result[1]++;
             }
 
@@ -634,12 +574,6 @@ export const overlimit = {
         convertBack: (number: [number, number]): string => {
             number = overlimit.technical.prepare(number);
             if (!isFinite(number[0])) { return `${number[0]}`; }
-
-            number[0] = Math.round(number[0] * 1e14) / 1e14; //Fix floats
-            if (Math.abs(number[0]) >= 10) {
-                number[0] = 1;
-                number[1]++;
-            }
 
             if (Math.abs(number[1]) < 1e16) { return number[1] === 0 ? `${number[0]}` : `${number[0]}e${number[1]}`; }
 
