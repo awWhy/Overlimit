@@ -30,6 +30,7 @@
     Non chainable: (LimitAlt.abs('-2'))
         abs, isFinite, isNaN - Strings only, faster methods (if it was a string already)
         clone - Clones your Array (in fastest way)
+        sort - Sorts provided Array (stable), if second value is true (false by default) then will sort in descending order
 
     Won't be added:
         sqrt or any other rootes - Use .power(0.5) instead
@@ -203,7 +204,72 @@ export const overlimit = {
         abs: (number: string): string => number[0] === '-' ? number.substring(1) : number,
         isNaN: (number: string): boolean => number.includes('NaN'),
         isFinite: (number: string): boolean => !number.includes('Infinity') && !number.includes('NaN'),
-        clone: (number: [number, number]): [number, number] => [number[0], number[1]]
+        clone: (number: [number, number]): [number, number] => [number[0], number[1]],
+        sort: <sortType extends Array<string | number | [number, number]>>(toSort: sortType, descend = false) => {
+            if (toSort.length < 2) { return; }
+            const numbers = overlimit.technical.convertAll(toSort);
+            const compare = descend ? overlimit.technical.moreOrEqual : overlimit.technical.lessOrEqual;
+
+            let main: number[] | number[][] = [[0]];
+            initial:
+            for (let i = 1; i < numbers.length; i++) {
+                const target = main[main.length - 1];
+                if (compare(numbers[i - 1], numbers[i])) {
+                    do {
+                        target.push(i);
+                        i++;
+                        if (i >= numbers.length) { break initial; }
+                    } while (compare(numbers[i - 1], numbers[i]));
+                    main.push([i]);
+                } else {
+                    do {
+                        target.push(i);
+                        i++;
+                        if (i >= numbers.length) {
+                            target.reverse();
+                            break initial;
+                        }
+                    } while (compare(numbers[i], numbers[i - 1]));
+                    target.reverse();
+                    main.push([i]);
+                }
+            }
+
+            const merge = (array: number[][]): number[] | number[][] => {
+                if (array.length === 1) { return array[0]; }
+                let main: number[] | number[][] = [] as number[][];
+
+                let i;
+                for (i = 0; i < array.length - 1; i += 2) {
+                    main.push([]);
+                    const target = main[main.length - 1];
+                    const first = array[i];
+                    const second = array[i + 1];
+                    let f = 0;
+                    let s = 0;
+                    while (f < first.length || s < second.length) {
+                        if (s >= second.length || (f < first.length && compare(numbers[first[f]], numbers[second[s]]))) {
+                            target.push(first[f]);
+                            f++;
+                        } else {
+                            target.push(second[s]);
+                            s++;
+                        }
+                    }
+                }
+                if (i === array.length - 1) { main.push(array[i]); }
+
+                main = merge(main);
+                return main;
+            };
+            main = merge(main) as number[];
+
+            const clone = toSort.slice(0);
+            toSort.length = 0;
+            for (let i = 0; i < clone.length; i++) {
+                toSort.push(clone[main[i]]);
+            }
+        }
     },
     /* Private functions */
     technical: {

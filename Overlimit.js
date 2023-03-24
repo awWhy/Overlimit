@@ -135,7 +135,75 @@ export const overlimit = {
     abs: (number) => number[0] === "-" ? number.substring(1) : number,
     isNaN: (number) => number.includes("NaN"),
     isFinite: (number) => !number.includes("Infinity") && !number.includes("NaN"),
-    clone: (number) => [number[0], number[1]]
+    clone: (number) => [number[0], number[1]],
+    sort: (toSort, descend = false) => {
+      if (toSort.length < 2) {
+        return;
+      }
+      const numbers = overlimit.technical.convertAll(toSort);
+      const compare = descend ? overlimit.technical.moreOrEqual : overlimit.technical.lessOrEqual;
+      let main = [[0]];
+      initial:
+        for (let i = 1; i < numbers.length; i++) {
+          const target = main[main.length - 1];
+          if (compare(numbers[i - 1], numbers[i])) {
+            do {
+              target.push(i);
+              i++;
+              if (i >= numbers.length) {
+                break initial;
+              }
+            } while (compare(numbers[i - 1], numbers[i]));
+            main.push([i]);
+          } else {
+            do {
+              target.push(i);
+              i++;
+              if (i >= numbers.length) {
+                target.reverse();
+                break initial;
+              }
+            } while (compare(numbers[i], numbers[i - 1]));
+            target.reverse();
+            main.push([i]);
+          }
+        }
+      const merge = (array) => {
+        if (array.length === 1) {
+          return array[0];
+        }
+        let main2 = [];
+        let i;
+        for (i = 0; i < array.length - 1; i += 2) {
+          main2.push([]);
+          const target = main2[main2.length - 1];
+          const first = array[i];
+          const second = array[i + 1];
+          let f = 0;
+          let s = 0;
+          while (f < first.length || s < second.length) {
+            if (s >= second.length || f < first.length && compare(numbers[first[f]], numbers[second[s]])) {
+              target.push(first[f]);
+              f++;
+            } else {
+              target.push(second[s]);
+              s++;
+            }
+          }
+        }
+        if (i === array.length - 1) {
+          main2.push(array[i]);
+        }
+        main2 = merge(main2);
+        return main2;
+      };
+      main = merge(main);
+      const clone = toSort.slice(0);
+      toSort.length = 0;
+      for (let i = 0; i < clone.length; i++) {
+        toSort.push(clone[main[i]]);
+      }
+    }
   },
   /* Private functions */
   technical: {

@@ -22,6 +22,7 @@ Supports numbers from -1e1e308 to 1e1e308, small numbers included (1e-1e308)
 Fastest is Limit(array).toArray() (~27% faster, than Limit(string).toString()) \
 LimitAlt has faster way to do abs, isNaN, isFinite, but only if it's a String \
 LimitAlt has faster way to clone (LimitAlt.clone()), but only if it's a Array of type [number, number] \
+LimitAlt has sorting function, that will mutate provided Array, returns void (uses stable natural merge sort; LimitAlt.sort(array to sort, boolean for descending order (false default))) \
 Floats are only fixed, at last call alike 'toString' or 'lessThan', also trunc type functions \
 Also there is no protection for Exponent being non finite on first call (Only end result has it checked)
 ### Functions that are missing and won't be added:
