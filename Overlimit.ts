@@ -559,8 +559,8 @@ export const overlimit = {
                     exponent++;
                 }
 
-                if (settings.padding ?? setting.padding) { result = result.toFixed(digits); }
-                return settings.type !== 'input' ? `${`${result}`.replace('.', setting.point)}e${exponent}` : `${result}e${exponent}`;
+                result = (settings.padding ?? setting.padding) ? result.toFixed(digits) : `${result}`;
+                return settings.type !== 'input' ? `${result.replace('.', setting.point)}e${exponent}` : `${result}e${exponent}`;
             }
 
             //12345
@@ -568,16 +568,13 @@ export const overlimit = {
                 (settings.maxDigits ?? settings.minDigits ?? setting.digits[0]) :
                 (settings.minDigits ?? setting.digits[1]);
 
-            let formated: number | string = Math.round(base * 10 ** (digits + power)) / 10 ** digits;
-            formated = (settings.padding ?? setting.padding) && digits > 0 ? formated.toFixed(digits) : `${formated}`;
+            const result = Math.round(base * 10 ** (digits + power)) / 10 ** digits;
+            const formated = (settings.padding ?? setting.padding) && digits > 0 ? result.toFixed(digits) : `${result}`;
 
-            if (settings.type !== 'input') {
-                formated = power >= 3 ?
-                    formated.replace(/\B(?=(\d{3})+(?!\d))/g, setting.separator) :
-                    formated.replace('.', setting.point);
-            }
-
-            return formated;
+            if (settings.type === 'input') { return formated; }
+            return result >= 1e3 ?
+                formated.replace(/\B(?=(\d{3})+(?!\d))/g, setting.separator) :
+                formated.replace('.', setting.point);
         },
         /* Convertion functions */
         convert: (number: string | number | [number, number]): [number, number] => {
