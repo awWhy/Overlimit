@@ -19,7 +19,7 @@
         trunc, floor, ceil, round
         isNaN, isFinite - reacts to both parts, even if exponent is -Infinity
 
-        format - Numbers are saved as '2e1', format will transform into '20' it's only for visual
+        format - Numbers are saved as '2e1', format will transform into '20' it's only for visual (has special settings)
         Really big numbers shown as '2e-e20' ('1e-2e20') or '-2ee20' ('-1e2e20')
 
         To get the result:
@@ -36,8 +36,7 @@
         sqrt or any other rootes - Use .power(0.5) instead
         exp - I don't see the need, just use .power(Math.E, 2)
 
-    > Longer chains should give better perfomance since convertion only happens at .get
-    > Some functions might break when exponent turns into Infinity or NaN within chain (.more() and alike, wasn't tested so not confirmed)
+    > Longer chains should give better perfomance since conversion only happens at .get
 
     Some JS rules are altered:
     '-+1 ** Infinity', '1 ** NaN' now returns 1 instead of NaN
@@ -45,8 +44,6 @@
     '0 * Infinity', '0 * NaN' now returns 0 instead of NaN
     'Infinity / 0' now returns NaN instead of Infinity
     '0 / NaN' now returns 0 instead of NaN
-
-    Can change some settings in overlimit.settings
 */
 
 /* Can be added if needed:
@@ -55,7 +52,6 @@
     log: Allow base to be bigger than 2**1024, if someone actually need it
     format: Allow digits to be more than 0 or 2, when power is more than 3 (will slow down format)
     format: Add into format function object argument point and separator, power, maxPower (easy, but don't see the need)
-    format: Add padding setting: 1ee2 > 1.00ee2
     format: Add format for power with a special separator: 1e12345 > 1e12,345 (probably no)
     convert: Allow sent string '1e1e2' to look like '1ee2' (probably no)
     calculator: Add website where can play with calculator for testing
@@ -63,7 +59,6 @@
 
 export const overlimit = {
     settings: {
-        minDigits: 0, //When exponent is bigger than format.maxPower (1000 as default)
         format: {
             //Calling function with type === 'input', will ignore point and separator, also number never turned into 1ee2
             digits: [4, 2], //Digits past point [max, min]
@@ -71,7 +66,6 @@ export const overlimit = {
             //Max is used when when numbers like 0.0001 (exponent < 0)
             //For numbers with exponent of 3+ (before next convert), digits past point always 0
             //Min is used any other time
-            //If sent object is missing max, then it will check min, before using default (this one's)
             power: [6, -3], //When convert into: example 1000000 > 1e6; [+, -]
             maxPower: 1e4, //When convert into: 1e2345 > 2.34ee3; [+, -] (power is never formated)
             point: '.', //What should be used instead of dot; example 1.21 > 1,21
@@ -193,7 +187,7 @@ export const overlimit = {
 
                 return this;
             },
-            format: (settings = {} as { maxDigits?: number, minDigits?: number, type?: 'number' | 'input', padding?: boolean }): string => technical.format(result, settings),
+            format: (settings = {} as { digits?: number, type?: 'number' | 'input', padding?: boolean }): string => technical.format(result, settings),
             toNumber: (): number => Number(technical.convertBack(result)),
             toString: (): string => technical.convertBack(result),
             toArray: (): [number, number] => technical.prepare(result)
@@ -526,15 +520,15 @@ export const overlimit = {
 
             return left;
         },
-        format: (left: [number, number], settings: { maxDigits?: number, minDigits?: number, type?: 'number' | 'input', padding?: boolean }): string => {
+        format: (left: [number, number], settings: { digits?: number, type?: 'number' | 'input', padding?: boolean }): string => {
             const [base, power] = left;
             if (!isFinite(base) || !isFinite(power)) { return overlimit.technical.convertBack(left); }
             const { format: setting } = overlimit.settings;
-            //Minimal optimization possible (changing ?? to === undefined), but very minor
+            //Using != null instead of ??, because esbuild creates >7 variables that are never used (and that annoys me)
 
             //1.23ee123 (-1.23e-e123)
             if ((power >= setting.maxPower || power <= -setting.maxPower) && settings.type !== 'input') {
-                const digits = settings.minDigits ?? setting.digits[1];
+                const digits = settings.digits != null ? settings.digits : setting.digits[1];
                 let exponent = Math.floor(Math.log10(Math.abs(power)));
                 let result = Math.abs(Math.round(power / 10 ** (exponent - digits)) / 10 ** digits);
                 if (result === 10) {
@@ -543,7 +537,7 @@ export const overlimit = {
                 }
                 if (base < 0) { result *= -1; }
 
-                const formated = settings.padding ?? setting.padding ?
+                const formated = (settings.padding != null ? settings.padding : setting.padding) ?
                     result.toFixed(digits).replace('.', setting.point) :
                     `${result}`.replace('.', setting.point);
                 return `${formated}e${power < 0 ? '-' : ''}e${exponent}`;
@@ -551,7 +545,7 @@ export const overlimit = {
 
             //1.23e123
             if (power >= setting.power[0] || power < setting.power[1]) {
-                const digits = settings.minDigits ?? setting.digits[1];
+                const digits = settings.digits != null ? settings.digits : setting.digits[1];
                 let exponent = power;
                 let result: string | number = Math.round(base * 10 ** digits) / 10 ** digits;
                 if (Math.abs(result) === 10) {
@@ -559,17 +553,14 @@ export const overlimit = {
                     exponent++;
                 }
 
-                result = (settings.padding ?? setting.padding) ? result.toFixed(digits) : `${result}`;
+                result = (settings.padding != null ? settings.padding : setting.padding) ? result.toFixed(digits) : `${result}`;
                 return settings.type !== 'input' ? `${result.replace('.', setting.point)}e${exponent}` : `${result}e${exponent}`;
             }
 
             //12345
-            const digits = power >= 3 ? 0 : power < 0 ?
-                (settings.maxDigits ?? settings.minDigits ?? setting.digits[0]) :
-                (settings.minDigits ?? setting.digits[1]);
-
+            const digits = power >= 3 ? 0 : settings.digits != null ? settings.digits : setting.digits[power < 0 ? 0 : 1];
             const result = Math.round(base * 10 ** (digits + power)) / 10 ** digits;
-            const formated = (settings.padding ?? setting.padding) && digits > 0 ? result.toFixed(digits) : `${result}`;
+            const formated = (settings.padding != null ? settings.padding : setting.padding) && digits > 0 ? result.toFixed(digits) : `${result}`;
 
             if (settings.type === 'input') { return formated; }
             return result >= 1e3 ?
