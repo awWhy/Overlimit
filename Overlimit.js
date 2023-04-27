@@ -563,10 +563,6 @@ export const overlimit = {
       if (!isFinite(result[0])) {
         return isNaN(result[0]) ? [NaN, NaN] : [result[0], Infinity];
       }
-      if (Math.floor(result[1]) !== result[1]) {
-        result[0] *= 10 ** (result[1] - Math.floor(result[1]));
-        result[1] = Math.floor(result[1]);
-      }
       const after = Math.abs(result[0]);
       if (after === 0) {
         result[1] = 0;
@@ -595,28 +591,23 @@ export const overlimit = {
       return result;
     },
     prepare: (number) => {
-      if (!isFinite(number[0]) || !isFinite(number[1])) {
-        if (number[0] === 0 || number[1] === -Infinity) {
-          return [0, 0];
-        }
-        if (isNaN(number[0]) || isNaN(number[1])) {
-          return [NaN, NaN];
-        }
-        return [number[0] < 0 ? -Infinity : Infinity, Infinity];
+      if (isFinite(number[0]) && isFinite(number[1])) {
+        return number;
       }
-      return number;
+      if (number[0] === 0 || number[1] === -Infinity) {
+        return [0, 0];
+      }
+      if (isNaN(number[0]) || isNaN(number[1])) {
+        return [NaN, NaN];
+      }
+      return [number[0] < 0 ? -Infinity : Infinity, Infinity];
     },
     convertBack: (number) => {
       number = overlimit.technical.prepare(number);
       if (!isFinite(number[0])) {
         return `${number[0]}`;
       }
-      if (Math.abs(number[1]) < 1e16) {
-        return number[1] === 0 ? `${number[0]}` : `${number[0]}e${number[1]}`;
-      }
-      const exponent = Math.floor(Math.log10(number[1]));
-      const result = Math.round(number[1] / 10 ** (exponent - 14)) / 1e14;
-      return `${number[0]}e${result}e${exponent}`;
+      return number[1] === 0 ? `${number[0]}` : `${number[0]}e${number[1]}`;
     }
   }
 };

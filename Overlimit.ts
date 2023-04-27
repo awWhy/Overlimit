@@ -538,8 +538,7 @@ export const overlimit = {
                 if (base < 0) { result *= -1; }
 
                 const formated = (settings.padding != null ? settings.padding : setting.padding) ?
-                    result.toFixed(digits).replace('.', setting.point) :
-                    `${result}`.replace('.', setting.point);
+                    result.toFixed(digits).replace('.', setting.point) : `${result}`.replace('.', setting.point);
                 return `${formated}e${power < 0 ? '-' : ''}e${exponent}`;
             }
 
@@ -563,9 +562,7 @@ export const overlimit = {
             const formated = (settings.padding != null ? settings.padding : setting.padding) && digits > 0 ? result.toFixed(digits) : `${result}`;
 
             if (settings.type === 'input') { return formated; }
-            return result >= 1e3 ?
-                formated.replace(/\B(?=(\d{3})+(?!\d))/g, setting.separator) :
-                formated.replace('.', setting.point);
+            return result >= 1e3 ? formated.replace(/\B(?=(\d{3})+(?!\d))/g, setting.separator) : formated.replace('.', setting.point);
         },
         /* Convertion functions */
         convert: (number: string | number | [number, number]): [number, number] => {
@@ -579,11 +576,6 @@ export const overlimit = {
             }
 
             if (!isFinite(result[0])) { return isNaN(result[0]) ? [NaN, NaN] : [result[0], Infinity]; }
-
-            if (Math.floor(result[1]) !== result[1]) { //Fix non trunc exponent ([2, 10.1] > [2.5, 10])
-                result[0] *= 10 ** (result[1] - Math.floor(result[1]));
-                result[1] = Math.floor(result[1]);
-            }
 
             const after = Math.abs(result[0]);
             if (after === 0) {
@@ -617,24 +609,15 @@ export const overlimit = {
             return result;
         },
         prepare: (number: [number, number]): [number, number] => {
-            if (!isFinite(number[0]) || !isFinite(number[1])) {
-                if (number[0] === 0 || number[1] === -Infinity) { return [0, 0]; }
-                if (isNaN(number[0]) || isNaN(number[1])) { return [NaN, NaN]; }
-                return [number[0] < 0 ? -Infinity : Infinity, Infinity]; //Base can be non Infinity
-            }
-
-            return number;
+            if (isFinite(number[0]) && isFinite(number[1])) { return number; }
+            if (number[0] === 0 || number[1] === -Infinity) { return [0, 0]; }
+            if (isNaN(number[0]) || isNaN(number[1])) { return [NaN, NaN]; }
+            return [number[0] < 0 ? -Infinity : Infinity, Infinity]; //Base can be non Infinity
         },
         convertBack: (number: [number, number]): string => {
             number = overlimit.technical.prepare(number);
             if (!isFinite(number[0])) { return `${number[0]}`; }
-
-            if (Math.abs(number[1]) < 1e16) { return number[1] === 0 ? `${number[0]}` : `${number[0]}e${number[1]}`; }
-
-            const exponent = Math.floor(Math.log10(number[1]));
-            const result = Math.round(number[1] / 10 ** (exponent - 14)) / 1e14;
-
-            return `${number[0]}e${result}e${exponent}`;
+            return number[1] === 0 ? `${number[0]}` : `${number[0]}e${number[1]}`;
         }
     }
 };
