@@ -153,8 +153,8 @@ export const overlimit = {
 
                 let allEqual = technical.equal(result, array[0]);
                 for (let i = 1; i < array.length; i++) {
-                    //&&= will not call equal function if itself is false
-                    allEqual &&= technical.equal(array[i - 1], array[i]);
+                    if (!allEqual) { return false; }
+                    allEqual = technical.equal(array[i - 1], array[i]);
                 }
 
                 return allEqual;
