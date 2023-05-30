@@ -1,7 +1,8 @@
 # Overlimit
+Might be better to use https://github.com/Patashu/break_infinity.js
 ## Alternative to Break Infinity
 Should have 0 dependicies (if not, then I set it up wrong) \
-Curretly being worked on. But should be stable now \
+If some functions are missing, then can ask for them to be added \
 Due to constant fixing of Floating errors, numbers can end up being a little bigger than they should be \
 To use, just download .ts or .js (JS auto created by esbuild) file of Overlimit \
 Start with Limit(yourNumber).functionYouNeed().get() \
