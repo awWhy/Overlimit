@@ -40,10 +40,15 @@
 
     Some JS rules are altered:
     '-+1 ** Infinity', '1 ** NaN' now returns 1 instead of NaN
-    '0 ** 0', 'Infinity ** 0', 'NaN ** 0' now retuns NaN instead of 1
+    '0 ** 0', 'NaN ** 0' now retuns NaN instead of 1
     '0 * Infinity', '0 * NaN' now returns 0 instead of NaN
     'Infinity / 0' now returns NaN instead of Infinity
     '0 / NaN' now returns 0 instead of NaN
+    Kept weird JS rules:
+    'Infinity ** 0' returns 1 (NaN not included because its true value could be 0)
+    'X / -+Infinity' returns 0 (precision being lost will result in 0)
+    Idea is that 0 could be 1e-324 is not taken, because precision lost Math doesnt work like this
+    If we would allow idea of that type then any value multiplied by 0 should be NaN (1e-324 * 1e308)
 */
 
 /* Can be added if needed:
@@ -354,7 +359,7 @@ export const overlimit = {
             return left;
         },
         pow: (left: [number, number], power: number): [number, number] => {
-            if (power === 0) { return left[0] === 0 || !isFinite(left[0]) ? [NaN, NaN] : [1, 0]; }
+            if (power === 0) { return left[0] === 0 || isNaN(left[0]) ? [NaN, NaN] : [1, 0]; }
             if (left[0] === 0) { return power < 0 ? [NaN, NaN] : [0, 0]; }
             if (!isFinite(power)) {
                 if (left[1] === 0 && (left[0] === 1 || (left[0] === -1 && !isNaN(power)))) { return [1, 0]; }
