@@ -3,13 +3,12 @@ export const overlimit = {
   settings: {
     format: {
       //Calling function with type === 'input', will ignore point and separator, also number never turned into 1ee2
-      digits: [4, 2],
-      //Digits past point [max, min]
-      padding: true,
+      digits: [0, 2, 4],
+      //Digits past point (1.11) [min, power, max]; Decreases by 1 for every new digit
+      //Do not use min setting more than 2, because numbers >= 1e3 will get incorectly converted
+      //Power setting is for any number like 1.11e111
+      padding: false,
       //Will add missing digits past point
-      //Max is used when when numbers like 0.0001 (exponent < 0)
-      //For numbers with exponent of 3+ (before next convert), digits past point always 0
-      //Min is used any other time
       power: [6, -3],
       //When convert into: example 1000000 > 1e6; [+, -]
       maxPower: 1e4,
@@ -25,6 +24,9 @@ export const overlimit = {
     let result = technical.convert(number);
     return {
       plus: function(...numbers) {
+        if (numbers.length < 1) {
+          return this;
+        }
         const array = technical.convertAll(numbers);
         for (let i = 0; i < array.length; i++) {
           result = technical.add(result, array[i]);
@@ -32,6 +34,9 @@ export const overlimit = {
         return this;
       },
       minus: function(...numbers) {
+        if (numbers.length < 1) {
+          return this;
+        }
         const array = technical.convertAll(numbers);
         for (let i = 0; i < array.length; i++) {
           result = technical.sub(result, array[i]);
@@ -39,6 +44,9 @@ export const overlimit = {
         return this;
       },
       multiply: function(...numbers) {
+        if (numbers.length < 1) {
+          return this;
+        }
         const array = technical.convertAll(numbers);
         for (let i = 0; i < array.length; i++) {
           result = technical.mult(result, array[i]);
@@ -46,6 +54,9 @@ export const overlimit = {
         return this;
       },
       divide: function(...numbers) {
+        if (numbers.length < 1) {
+          return this;
+        }
         const array = technical.convertAll(numbers);
         for (let i = 0; i < array.length; i++) {
           result = technical.div(result, array[i]);
@@ -88,6 +99,9 @@ export const overlimit = {
       moreOrEqual: (compare) => technical.moreOrEqual(result, technical.convert(compare)),
       notEqual: (compare) => technical.notEqual(result, technical.convert(compare)),
       equal: (...compare) => {
+        if (compare.length < 1) {
+          return true;
+        }
         const array = technical.convertAll(compare);
         let allEqual = technical.equal(result, array[0]);
         for (let i = 1; i < array.length; i++) {
@@ -99,6 +113,9 @@ export const overlimit = {
         return allEqual;
       },
       max: function(...compare) {
+        if (compare.length < 1) {
+          return this;
+        }
         const array = technical.convertAll(compare);
         for (let i = 0; i < array.length; i++) {
           if (isNaN(array[i][0])) {
@@ -112,6 +129,9 @@ export const overlimit = {
         return this;
       },
       min: function(...compare) {
+        if (compare.length < 1) {
+          return this;
+        }
         const array = technical.convertAll(compare);
         for (let i = 0; i < array.length; i++) {
           if (isNaN(array[i][0])) {
@@ -543,13 +563,14 @@ export const overlimit = {
         result2 = (settings.padding != null ? settings.padding : setting.padding) ? result2.toFixed(digits2) : `${result2}`;
         return settings.type !== "input" ? `${result2.replace(".", setting.point)}e${exponent}` : `${result2}e${exponent}`;
       }
-      const digits = power >= 3 ? 0 : settings.digits != null ? settings.digits : setting.digits[power < 0 ? 0 : 1];
+      const digits = settings.digits != null ? settings.digits : Math.max(setting.digits[2] - Math.max(power, 0), setting.digits[0]);
       const result = Math.round(base * 10 ** (digits + power)) / 10 ** digits;
-      const formated = (settings.padding != null ? settings.padding : setting.padding) && digits > 0 ? result.toFixed(digits) : `${result}`;
+      let formated = (settings.padding != null ? settings.padding : setting.padding) && digits > 0 ? result.toFixed(digits) : `${result}`;
       if (settings.type === "input") {
         return formated;
       }
-      return result >= 1e3 ? formated.replace(/\B(?=(\d{3})+(?!\d))/g, setting.separator) : formated.replace(".", setting.point);
+      formated = formated.replace(".", setting.point);
+      return result >= 1e3 ? formated.replaceAll(/\B(?=(\d{3})+(?!\d))/g, setting.separator) : formated;
     },
     /* Convertion functions */
     convert: (number) => {

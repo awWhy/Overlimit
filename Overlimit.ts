@@ -7,11 +7,8 @@
     '1.25e32' as typeof 'string' (2ee5 is not allowed, instead send '1e2e5')
     [1.25, 32] as typeof 'object' [number, number] (will be auto cloned)
 
-    Function calls
-    > Just in case saying: all spread arguments require at least 1 (2 if not chain) arguments, TS is just being silly
-
-    Chainable: (Limit('2').plus(1).get(); has to end with .get if you need result)
-        plus, minus, multiply, divide - These one's can take any amount of arguments
+    Chainable: (Limit(2).plus(1).toNumber())
+        plus, minus, multiply, divide - These one's can take any amount of arguments (ignored if 0)
         power, log - Power must be a number. Also log can have any (number) base and even negative
         abs
         less, lessOrEqual, more, moreOrEqual, notEqual, equal - Only equal allows any amount of arguments
@@ -25,7 +22,7 @@
         To get the result:
         toNumber - returns a Number (Must be bellow 2 ** 1024)
         toString - returns a String (Can be turned into a Number with JS default function)
-        toArray - returns a Array (Fastest, but hardest to use, need to clone Arrays [number[0], number[1]]; Limit already auto clones)
+        toArray - returns a Array (Fastest, but hardest to use; Limit auto clones arrays)
 
     Non chainable: (LimitAlt.abs('-2'))
         abs, isFinite, isNaN - Strings only, faster methods (if it was a string already)
@@ -33,10 +30,8 @@
         sort - Sorts provided Array (stable), if second value is true (false by default) then will sort in descending order
 
     Won't be added:
-        sqrt or any other rootes - Use .power(0.5) instead
-        exp - I don't see the need, just use .power(Math.E, 2)
-
-    > Longer chains should give better perfomance since conversion only happens at .get
+        sqrt or any other rootes - Use .power(1 / power) instead
+        exp - I don't see the need, just use .power(Math.E, power)
 
     Some JS rules are altered:
     '-+1 ** Infinity', '1 ** NaN' now returns 1 instead of NaN
@@ -52,25 +47,25 @@
 */
 
 /* Can be added if needed:
-    TS: Add proper type to an object (probably no, too much pain)
+    Class: Alternative to be able to call like: number.function()
+    sort: Better sorting function that takes function as arqument
     power: Allow power to be bigger than 2**1024, if there ever will be a need for it
     log: Allow base to be bigger than 2**1024, if someone actually need it
-    format: Allow digits to be more than 0 or 2, when power is more than 3 (will slow down format)
-    format: Add into format function object argument point and separator, power, maxPower (easy, but don't see the need)
-    format: Add format for power with a special separator: 1e12345 > 1e12,345 (probably no)
-    convert: Allow sent string '1e1e2' to look like '1ee2' (probably no)
-    calculator: Add website where can play with calculator for testing
+    format: Fix rare bug with incorrect padding amount: 9.999999 > 10.0000 (instead of 10.000) (lazy to fix since no one even using this breakInfinity alternative)
+    format: Allow more than 2 digits if number is >= 1000 (lazy to fix since no one even using this breakInfinity alternative)
+    format: More options to format function object argument: Like point, separator, power, maxPower
+    format: Add format for power with a special separator: 1e12345 > 1e12,345
+    calculator: Add website where can test calculator
 */
 
 export const overlimit = {
     settings: {
         format: {
             //Calling function with type === 'input', will ignore point and separator, also number never turned into 1ee2
-            digits: [4, 2], //Digits past point [max, min]
-            padding: true, //Will add missing digits past point
-            //Max is used when when numbers like 0.0001 (exponent < 0)
-            //For numbers with exponent of 3+ (before next convert), digits past point always 0
-            //Min is used any other time
+            digits: [0, 2, 4], //Digits past point (1.11) [min, power, max]; Decreases by 1 for every new digit
+            //Do not use min setting more than 2, because numbers >= 1e3 will get incorectly converted
+            //Power setting is for any number like 1.11e111
+            padding: false, //Will add missing digits past point
             power: [6, -3], //When convert into: example 1000000 > 1e6; [+, -]
             maxPower: 1e4, //When convert into: 1e2345 > 2.34ee3; [+, -] (power is never formated)
             point: '.', //What should be used instead of dot; example 1.21 > 1,21
@@ -83,6 +78,7 @@ export const overlimit = {
 
         return {
             plus: function(...numbers: Array<string | number | [number, number]>) {
+                if (numbers.length < 1) { return this; }
                 const array = technical.convertAll(numbers);
 
                 for (let i = 0; i < array.length; i++) {
@@ -92,6 +88,7 @@ export const overlimit = {
                 return this;
             },
             minus: function(...numbers: Array<string | number | [number, number]>) {
+                if (numbers.length < 1) { return this; }
                 const array = technical.convertAll(numbers);
 
                 for (let i = 0; i < array.length; i++) {
@@ -101,6 +98,7 @@ export const overlimit = {
                 return this;
             },
             multiply: function(...numbers: Array<string | number | [number, number]>) {
+                if (numbers.length < 1) { return this; }
                 const array = technical.convertAll(numbers);
 
                 for (let i = 0; i < array.length; i++) {
@@ -110,6 +108,7 @@ export const overlimit = {
                 return this;
             },
             divide: function(...numbers: Array<string | number | [number, number]>) {
+                if (numbers.length < 1) { return this; }
                 const array = technical.convertAll(numbers);
 
                 for (let i = 0; i < array.length; i++) {
@@ -154,6 +153,7 @@ export const overlimit = {
             moreOrEqual: (compare: string | number | [number, number]): boolean => technical.moreOrEqual(result, technical.convert(compare)),
             notEqual: (compare: string | number | [number, number]): boolean => technical.notEqual(result, technical.convert(compare)),
             equal: (...compare: Array<string | number | [number, number]>): boolean => {
+                if (compare.length < 1) { return true; }
                 const array = technical.convertAll(compare);
 
                 let allEqual = technical.equal(result, array[0]);
@@ -165,6 +165,7 @@ export const overlimit = {
                 return allEqual;
             },
             max: function(...compare: Array<string | number | [number, number]>) {
+                if (compare.length < 1) { return this; }
                 const array = technical.convertAll(compare);
 
                 for (let i = 0; i < array.length; i++) {
@@ -179,6 +180,7 @@ export const overlimit = {
                 return this;
             },
             min: function(...compare: Array<string | number | [number, number]>) {
+                if (compare.length < 1) { return this; }
                 const array = technical.convertAll(compare);
 
                 for (let i = 0; i < array.length; i++) {
@@ -562,12 +564,13 @@ export const overlimit = {
             }
 
             //12345
-            const digits = power >= 3 ? 0 : settings.digits != null ? settings.digits : setting.digits[power < 0 ? 0 : 1];
+            const digits = settings.digits != null ? settings.digits : Math.max(setting.digits[2] - Math.max(power, 0), setting.digits[0]);
             const result = Math.round(base * 10 ** (digits + power)) / 10 ** digits;
-            const formated = (settings.padding != null ? settings.padding : setting.padding) && digits > 0 ? result.toFixed(digits) : `${result}`;
+            let formated = (settings.padding != null ? settings.padding : setting.padding) && digits > 0 ? result.toFixed(digits) : `${result}`;
 
             if (settings.type === 'input') { return formated; }
-            return result >= 1e3 ? formated.replace(/\B(?=(\d{3})+(?!\d))/g, setting.separator) : formated.replace('.', setting.point);
+            formated = formated.replace('.', setting.point);
+            return result >= 1e3 ? formated.replaceAll(/\B(?=(\d{3})+(?!\d))/g, setting.separator) : formated;
         },
         /* Convertion functions */
         convert: (number: string | number | [number, number]): [number, number] => {
