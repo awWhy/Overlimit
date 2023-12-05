@@ -487,10 +487,10 @@ export const overlimit = {
       return left[1] < right[1];
     },
     equal: (left, right) => {
-      return left[1] === right[1] ? left[0] === right[0] : false;
+      return left[1] === right[1] && left[0] === right[0];
     },
     notEqual: (left, right) => {
-      return left[1] !== right[1] ? true : left[0] !== right[0];
+      return left[1] !== right[1] || left[0] !== right[0];
     },
     trunc: (left) => {
       if (left[1] < 0) {
