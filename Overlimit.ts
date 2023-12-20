@@ -531,11 +531,10 @@ export const overlimit = {
             const [base, power] = left;
             if (!isFinite(base) || !isFinite(power)) { return overlimit.technical.convertBack(left); }
             const { format: setting } = overlimit.settings;
-            //Using != null instead of ??, because esbuild creates >7 variables that are never used (and that annoys me)
 
             //1.23ee123 (-1.23e-e123)
             if ((power >= setting.maxPower || power <= -setting.maxPower) && settings.type !== 'input') {
-                const digits = settings.digits != null ? settings.digits : setting.digits[1];
+                const digits = settings.digits !== undefined ? settings.digits : setting.digits[1];
                 let exponent = Math.floor(Math.log10(Math.abs(power)));
                 let result = Math.abs(Math.round(power / 10 ** (exponent - digits)) / 10 ** digits);
                 if (result === 10) {
@@ -543,34 +542,27 @@ export const overlimit = {
                     exponent++;
                 }
                 if (base < 0) { result *= -1; }
-
-                const formated = (settings.padding != null ? settings.padding : setting.padding) ?
-                    result.toFixed(digits).replace('.', setting.point) : `${result}`.replace('.', setting.point);
-                return `${formated}e${power < 0 ? '-' : ''}e${exponent}`;
+                return `${((settings.padding !== undefined ? settings.padding : setting.padding) ? result.toFixed(digits) : `${result}`).replace('.', setting.point)}e${power < 0 ? '-' : ''}e${exponent}`;
             }
 
             //1.23e123
             if (power >= setting.power[0] || power < setting.power[1]) {
-                const digits = settings.digits != null ? settings.digits : setting.digits[1];
+                const digits = settings.digits !== undefined ? settings.digits : setting.digits[1];
                 let exponent = power;
-                let result: string | number = Math.round(base * 10 ** digits) / 10 ** digits;
+                let result = Math.round(base * 10 ** digits) / 10 ** digits;
                 if (Math.abs(result) === 10) {
                     result = 1;
                     exponent++;
                 }
-
-                result = (settings.padding != null ? settings.padding : setting.padding) ? result.toFixed(digits) : `${result}`;
-                return settings.type !== 'input' ? `${result.replace('.', setting.point)}e${exponent}` : `${result}e${exponent}`;
+                const formated = (settings.padding !== undefined ? settings.padding : setting.padding) ? result.toFixed(digits) : `${result}`;
+                return settings.type === 'input' ? `${formated}e${exponent}` : `${formated.replace('.', setting.point)}e${exponent}`;
             }
 
             //12345
-            const digits = settings.digits != null ? settings.digits : Math.max(setting.digits[2] - Math.max(power, 0), setting.digits[0]);
+            const digits = settings.digits !== undefined ? settings.digits : Math.max(setting.digits[2] - Math.max(power, 0), setting.digits[0]);
             const result = Math.round(base * 10 ** (digits + power)) / 10 ** digits;
-            let formated = (settings.padding != null ? settings.padding : setting.padding) && digits > 0 ? result.toFixed(digits) : `${result}`;
-
-            if (settings.type === 'input') { return formated; }
-            formated = formated.replace('.', setting.point);
-            return result >= 1e3 ? formated.replaceAll(/\B(?=(\d{3})+(?!\d))/g, setting.separator) : formated;
+            const formated = (settings.padding !== undefined ? settings.padding : setting.padding) ? result.toFixed(digits) : `${result}`; //Small optimization possible by checking if digits > 0
+            return settings.type === 'input' ? formated : result >= 1e3 ? formated.replace('.', setting.point).replaceAll(/\B(?=(\d{3})+(?!\d))/g, setting.separator) : formated.replace('.', setting.point);
         },
         /* Convertion functions */
         convert: (number: string | number | [number, number]): [number, number] => {
