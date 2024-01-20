@@ -12,7 +12,9 @@ const limitSettings = {
     power: [6, -3],
     //When convert into: example 1000000 > 1e6; [+, -]
     maxPower: 1e4,
-    //When convert into: 1e2345 > 2.34ee3; [+, -] (power is never formated)
+    //When convert into: 1e2345 > 2.34ee3; [+, -] (power never uses thousand separator)
+    powerShort: true,
+    //If maxPower is reached, should format type be 2.34ee3 (if true) or 1e2.34e3 (if false or input type)
     point: ".",
     //What should be used instead of dot; example 1.21 > 1,21
     separator: ""
@@ -425,7 +427,7 @@ const technical = {
     }
     result[0] = Math.round(result[0] * 1e14) / 1e14;
     if (Math.abs(result[0]) === 10) {
-      result[0] = 1;
+      result[0] /= 10;
       result[1]++;
     }
     return result;
@@ -495,7 +497,7 @@ const technical = {
     }
     left[0] = Math.round(left[0] * 1e14) / 1e14;
     if (Math.abs(left[0]) === 10) {
-      left[0] = 1;
+      left[0] /= 10;
       left[1]++;
     }
     return left;
@@ -516,7 +518,7 @@ const technical = {
     }
     left[0] = Math.round(left[0] * 1e14) / 1e14;
     if (Math.abs(left[0]) === 10) {
-      left[0] = 1;
+      left[0] /= 10;
       left[1]++;
     }
     return left;
@@ -536,7 +538,7 @@ const technical = {
     }
     left[0] = Math.round(left[0] * 1e14) / 1e14;
     if (Math.abs(left[0]) === 10) {
-      left[0] = 1;
+      left[0] /= 10;
       left[1]++;
     }
     return left;
@@ -650,7 +652,7 @@ const technical = {
     }
     left[0] = Math.round(left[0] * 1e14) / 1e14;
     if (Math.abs(left[0]) === 10) {
-      left[0] = 1;
+      left[0] /= 10;
       left[1]++;
     }
     return left;
@@ -739,6 +741,10 @@ const technical = {
     } else if (left[1] <= 14) {
       left[0] = Math.floor(left[0] * 10 ** left[1]) / 10 ** left[1];
     }
+    if (left[0] === -10) {
+      left[0] = -1;
+      left[1]++;
+    }
     return left;
   },
   ceil: (left) => {
@@ -748,6 +754,10 @@ const technical = {
       left[0] = Math.ceil(left[0]);
     } else if (left[1] <= 14) {
       left[0] = Math.ceil(left[0] * 10 ** left[1]) / 10 ** left[1];
+    }
+    if (left[0] === 10) {
+      left[0] = 1;
+      left[1]++;
     }
     return left;
   },
@@ -759,6 +769,10 @@ const technical = {
     } else if (left[1] <= 14) {
       left[0] = Math.round(left[0] * 10 ** left[1]) / 10 ** left[1];
     }
+    if (Math.abs(left[0]) === 10) {
+      left[0] /= 10;
+      left[1]++;
+    }
     return left;
   },
   format: (left, settings) => {
@@ -767,33 +781,45 @@ const technical = {
       return technical.turnString(left);
     }
     const { format: setting } = limitSettings;
-    if ((power >= setting.maxPower || power <= -setting.maxPower) && settings.type !== "input") {
-      const digits2 = settings.digits !== void 0 ? settings.digits : setting.digits[1];
-      let exponent = Math.floor(Math.log10(Math.abs(power)));
-      let mantissa2 = Math.abs(Math.round(power / 10 ** (exponent - digits2)) / 10 ** digits2);
-      if (mantissa2 === 10) {
-        mantissa2 = 1;
-        exponent++;
-      }
-      if (base < 0) {
-        mantissa2 *= -1;
-      }
-      return `${((settings.padding !== void 0 ? settings.padding : setting.padding) ? mantissa2.toFixed(digits2) : `${mantissa2}`).replace(".", setting.point)}e${power < 0 ? "-" : ""}e${exponent}`;
-    }
-    if (power >= setting.power[0] || power < setting.power[1]) {
-      const digits2 = settings.digits !== void 0 ? settings.digits : setting.digits[1];
+    if (power >= setting.maxPower || power <= -setting.maxPower) {
+      const digits2 = settings.digits ?? setting.digits[1];
       let exponent = power;
       let mantissa2 = Math.round(base * 10 ** digits2) / 10 ** digits2;
       if (Math.abs(mantissa2) === 10) {
-        mantissa2 = 1;
+        mantissa2 /= 10;
         exponent++;
       }
-      const formated2 = (settings.padding !== void 0 ? settings.padding : setting.padding) ? mantissa2.toFixed(digits2) : `${mantissa2}`;
+      exponent = Math.floor(Math.log10(Math.abs(exponent)));
+      let powerMantissa = Math.round(power / 10 ** (exponent - digits2)) / 10 ** digits2;
+      if (Math.abs(powerMantissa) === 10) {
+        powerMantissa /= 10;
+        exponent++;
+      }
+      const formatedPower = settings.padding ?? setting.padding ? powerMantissa.toFixed(digits2) : `${powerMantissa}`;
+      if (settings.type !== "input" && setting.powerShort) {
+        powerMantissa = Math.abs(powerMantissa);
+        if (base < 0) {
+          powerMantissa *= -1;
+        }
+        return `${formatedPower.replace(".", setting.point)}e${power < 0 ? "-" : ""}e${exponent}`;
+      }
+      const formatedBase = settings.padding ?? setting.padding ? mantissa2.toFixed(digits2) : `${mantissa2}`;
+      return settings.type === "input" ? `${formatedBase}e${formatedPower}e${exponent}` : `${formatedBase.replace(".", setting.point)}e${formatedPower.replace(".", setting.point)}e${exponent}`;
+    }
+    if (power >= setting.power[0] || power < setting.power[1]) {
+      const digits2 = settings.digits ?? setting.digits[1];
+      let exponent = power;
+      let mantissa2 = Math.round(base * 10 ** digits2) / 10 ** digits2;
+      if (Math.abs(mantissa2) === 10) {
+        mantissa2 /= 10;
+        exponent++;
+      }
+      const formated2 = settings.padding ?? setting.padding ? mantissa2.toFixed(digits2) : `${mantissa2}`;
       return settings.type === "input" ? `${formated2}e${exponent}` : `${formated2.replace(".", setting.point)}e${exponent}`;
     }
-    const digits = settings.digits !== void 0 ? settings.digits : Math.max(setting.digits[2] - Math.max(power, 0), setting.digits[0]);
+    const digits = settings.digits ?? Math.max(setting.digits[2] - Math.max(power, 0), setting.digits[0]);
     const mantissa = Math.round(base * 10 ** (digits + power)) / 10 ** digits;
-    const formated = (settings.padding !== void 0 ? settings.padding : setting.padding) ? mantissa.toFixed(digits) : `${mantissa}`;
+    const formated = settings.padding ?? setting.padding ? mantissa.toFixed(digits) : `${mantissa}`;
     return settings.type === "input" ? formated : mantissa >= 1e3 ? formated.replace(".", setting.point).replaceAll(/\B(?=(\d{3})+(?!\d))/g, setting.separator) : formated.replace(".", setting.point);
   }
 };
