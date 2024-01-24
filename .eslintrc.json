@@ -60,6 +60,7 @@
         "@typescript-eslint/no-non-null-asserted-nullish-coalescing": "warn",
         "@typescript-eslint/no-meaningless-void-operator": "warn",
         "@typescript-eslint/no-inferrable-types": "warn",
+        "@typescript-eslint/no-this-alias": "off",
         "@typescript-eslint/default-param-last": "error",
         "@typescript-eslint/prefer-namespace-keyword": "warn",
         "@typescript-eslint/prefer-as-const": "error",

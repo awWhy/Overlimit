@@ -43,71 +43,73 @@ export default class Overlimit extends Array {
     this[1] = newValue[1];
     return this;
   }
+  /** Can take any amount of arquments */
   plus(...numbers) {
     if (numbers.length < 1) {
       return this;
     }
-    const array = technical.convertAll(numbers);
-    let result = [this[0], this[1]];
-    for (let i = 0; i < array.length; i++) {
-      result = technical.add(result, array[i]);
+    let result = this;
+    for (let i = 0; i < numbers.length; i++) {
+      result = technical.add(result, technical.convert(numbers[i]));
     }
     return this.#privateSet(result);
   }
+  /** Can take any amount of arquments */
   minus(...numbers) {
     if (numbers.length < 1) {
       return this;
     }
-    const array = technical.convertAll(numbers);
-    let result = [this[0], this[1]];
-    for (let i = 0; i < array.length; i++) {
-      result = technical.sub(result, array[i]);
+    let result = this;
+    for (let i = 0; i < numbers.length; i++) {
+      result = technical.sub(result, technical.convert(numbers[i]));
     }
     return this.#privateSet(result);
   }
+  /** Can take any amount of arquments */
   multiply(...numbers) {
     if (numbers.length < 1) {
       return this;
     }
-    const array = technical.convertAll(numbers);
-    let result = [this[0], this[1]];
-    for (let i = 0; i < array.length; i++) {
-      result = technical.mult(result, array[i]);
+    let result = this;
+    for (let i = 0; i < numbers.length; i++) {
+      result = technical.mult(result, technical.convert(numbers[i]));
     }
     return this.#privateSet(result);
   }
+  /** Can take any amount of arquments */
   divide(...numbers) {
     if (numbers.length < 1) {
       return this;
     }
-    const array = technical.convertAll(numbers);
-    let result = [this[0], this[1]];
-    for (let i = 0; i < array.length; i++) {
-      result = technical.div(result, array[i]);
+    let result = this;
+    for (let i = 0; i < numbers.length; i++) {
+      result = technical.div(result, technical.convert(numbers[i]));
     }
     return this.#privateSet(result);
   }
+  /** Power must be a number */
   power(power) {
-    return this.#privateSet(technical.pow([this[0], this[1]], power));
+    return this.#privateSet(technical.pow(this, power));
   }
+  /** Base must be a number, default value is Math.E */
   log(base = 2.718281828459045) {
-    return this.#privateSet(technical.log([this[0], this[1]], base));
+    return this.#privateSet(technical.log(this, base));
   }
   abs() {
     this[0] = Math.abs(this[0]);
     return this;
   }
   trunc() {
-    return this.#privateSet(technical.trunc([this[0], this[1]]));
+    return this.#privateSet(technical.trunc(this));
   }
   floor() {
-    return this.#privateSet(technical.floor([this[0], this[1]]));
+    return this.#privateSet(technical.floor(this));
   }
   ceil() {
-    return this.#privateSet(technical.ceil([this[0], this[1]]));
+    return this.#privateSet(technical.ceil(this));
   }
   round() {
-    return this.#privateSet(technical.round([this[0], this[1]]));
+    return this.#privateSet(technical.round(this));
   }
   isNaN() {
     return isNaN(this[0]) || isNaN(this[1]);
@@ -115,7 +117,6 @@ export default class Overlimit extends Array {
   isFinite() {
     return isFinite(this[0]) && isFinite(this[1]);
   }
-  //Type 'as unknown as [number, number]' is used to prevent type polution (since cloning is not required and Overlimit is just Array)
   lessThan(compare) {
     return technical.less(this, technical.convert(compare));
   }
@@ -131,48 +132,51 @@ export default class Overlimit extends Array {
   notEqual(compare) {
     return technical.notEqual(this, technical.convert(compare));
   }
-  equal(...compare) {
+  /** Can take any amount of arquments; Returns true if no arquments provided */
+  allEqual(...compare) {
     if (compare.length < 1) {
       return true;
     }
-    const array = technical.convertAll(compare);
-    let allEqual = technical.equal(this, array[0]);
-    for (let i = 1; i < array.length; i++) {
-      if (!allEqual) {
+    let previous = this;
+    for (let i = 0; i < compare.length; i++) {
+      const next = technical.convert(compare[i]);
+      if (technical.notEqual(previous, next)) {
         return false;
       }
-      allEqual = technical.equal(array[i - 1], array[i]);
+      previous = next;
     }
-    return allEqual;
+    return true;
   }
+  /** Will set new value to original number */
   max(...compare) {
     if (compare.length < 1) {
       return this;
     }
-    const array = technical.convertAll(compare);
-    let result = [this[0], this[1]];
-    for (let i = 0; i < array.length; i++) {
-      if (isNaN(array[i][0])) {
+    let result = this;
+    for (let i = 0; i < compare.length; i++) {
+      const after = technical.convert(compare[i]);
+      if (isNaN(after[0])) {
         return this.#privateSet([NaN, NaN]);
       }
-      if (technical.less(result, array[i])) {
-        result = array[i];
+      if (technical.less(result, after)) {
+        result = after;
       }
     }
     return this.#privateSet(result);
   }
+  /** Will set new value to original number */
   min(...compare) {
     if (compare.length < 1) {
       return this;
     }
-    const array = technical.convertAll(compare);
-    let result = [this[0], this[1]];
-    for (let i = 0; i < array.length; i++) {
-      if (isNaN(array[i][0])) {
+    let result = this;
+    for (let i = 0; i < compare.length; i++) {
+      const after = technical.convert(compare[i]);
+      if (isNaN(after[0])) {
         return this.#privateSet([NaN, NaN]);
       }
-      if (technical.more(result, array[i])) {
-        result = array[i];
+      if (technical.more(result, after)) {
+        result = after;
       }
     }
     return this.#privateSet(result);
@@ -186,218 +190,11 @@ export default class Overlimit extends Array {
   toString() {
     return technical.turnString(this);
   }
+  /** Manual modification of returned Array can cause bugs */
   toArray() {
     return technical.prepare([this[0], this[1]]);
   }
 }
-export const Limit = (number) => {
-  let result = technical.convert(number);
-  return {
-    get mantissa() {
-      return result[0];
-    },
-    get exponent() {
-      return result[1];
-    },
-    plus: function(...numbers) {
-      if (numbers.length < 1) {
-        return this;
-      }
-      const array = technical.convertAll(numbers);
-      for (let i = 0; i < array.length; i++) {
-        result = technical.add(result, array[i]);
-      }
-      return this;
-    },
-    minus: function(...numbers) {
-      if (numbers.length < 1) {
-        return this;
-      }
-      const array = technical.convertAll(numbers);
-      for (let i = 0; i < array.length; i++) {
-        result = technical.sub(result, array[i]);
-      }
-      return this;
-    },
-    multiply: function(...numbers) {
-      if (numbers.length < 1) {
-        return this;
-      }
-      const array = technical.convertAll(numbers);
-      for (let i = 0; i < array.length; i++) {
-        result = technical.mult(result, array[i]);
-      }
-      return this;
-    },
-    divide: function(...numbers) {
-      if (numbers.length < 1) {
-        return this;
-      }
-      const array = technical.convertAll(numbers);
-      for (let i = 0; i < array.length; i++) {
-        result = technical.div(result, array[i]);
-      }
-      return this;
-    },
-    power: function(power) {
-      result = technical.pow(result, power);
-      return this;
-    },
-    log: function(base = 2.718281828459045) {
-      result = technical.log(result, base);
-      return this;
-    },
-    abs: function() {
-      result[0] = Math.abs(result[0]);
-      return this;
-    },
-    trunc: function() {
-      result = technical.trunc(result);
-      return this;
-    },
-    floor: function() {
-      result = technical.floor(result);
-      return this;
-    },
-    ceil: function() {
-      result = technical.ceil(result);
-      return this;
-    },
-    round: function() {
-      result = technical.round(result);
-      return this;
-    },
-    isNaN: () => isNaN(result[0]) || isNaN(result[1]),
-    isFinite: () => isFinite(result[0]) && isFinite(result[1]),
-    lessThan: (compare) => technical.less(result, technical.convert(compare)),
-    lessOrEqual: (compare) => technical.lessOrEqual(result, technical.convert(compare)),
-    moreThan: (compare) => technical.more(result, technical.convert(compare)),
-    moreOrEqual: (compare) => technical.moreOrEqual(result, technical.convert(compare)),
-    notEqual: (compare) => technical.notEqual(result, technical.convert(compare)),
-    equal: (...compare) => {
-      if (compare.length < 1) {
-        return true;
-      }
-      const array = technical.convertAll(compare);
-      let allEqual = technical.equal(result, array[0]);
-      for (let i = 1; i < array.length; i++) {
-        if (!allEqual) {
-          return false;
-        }
-        allEqual = technical.equal(array[i - 1], array[i]);
-      }
-      return allEqual;
-    },
-    max: function(...compare) {
-      if (compare.length < 1) {
-        return this;
-      }
-      const array = technical.convertAll(compare);
-      for (let i = 0; i < array.length; i++) {
-        if (isNaN(array[i][0])) {
-          result = [NaN, NaN];
-          break;
-        }
-        if (technical.less(result, array[i])) {
-          result = array[i];
-        }
-      }
-      return this;
-    },
-    min: function(...compare) {
-      if (compare.length < 1) {
-        return this;
-      }
-      const array = technical.convertAll(compare);
-      for (let i = 0; i < array.length; i++) {
-        if (isNaN(array[i][0])) {
-          result = [NaN, NaN];
-          break;
-        }
-        if (technical.more(result, array[i])) {
-          result = array[i];
-        }
-      }
-      return this;
-    },
-    format: (settings = {}) => technical.format(result, settings),
-    toNumber: () => Number(technical.turnString(result)),
-    toString: () => technical.turnString(result),
-    toArray: () => technical.prepare(result),
-    toLimit: () => new Overlimit(technical.prepare(result))
-  };
-};
-export const LimitAlt = {
-  //Deprecated
-  sort: (toSort, descend = false) => {
-    if (toSort.length < 2) {
-      return;
-    }
-    const numbers = technical.convertAll(toSort);
-    const compare = technical[descend ? "moreOrEqual" : "lessOrEqual"];
-    let main = [[0]];
-    initial:
-      for (let i = 1; i < numbers.length; i++) {
-        const target = main[main.length - 1];
-        if (compare(numbers[i - 1], numbers[i])) {
-          do {
-            target.push(i);
-            i++;
-            if (i >= numbers.length) {
-              break initial;
-            }
-          } while (compare(numbers[i - 1], numbers[i]));
-          main.push([i]);
-        } else {
-          do {
-            target.push(i);
-            i++;
-            if (i >= numbers.length) {
-              target.reverse();
-              break initial;
-            }
-          } while (compare(numbers[i], numbers[i - 1]));
-          target.reverse();
-          main.push([i]);
-        }
-      }
-    const merge = (array) => {
-      if (array.length === 1) {
-        return array[0];
-      }
-      let main2 = [];
-      let i;
-      for (i = 0; i < array.length - 1; i += 2) {
-        main2.push([]);
-        const target = main2[main2.length - 1];
-        const first = array[i];
-        const second = array[i + 1];
-        let f = 0;
-        let s = 0;
-        while (f < first.length || s < second.length) {
-          if (s >= second.length || f < first.length && compare(numbers[first[f]], numbers[second[s]])) {
-            target.push(first[f]);
-            f++;
-          } else {
-            target.push(second[s]);
-            s++;
-          }
-        }
-      }
-      if (i === array.length - 1) {
-        main2.push(array[i]);
-      }
-      main2 = merge(main2);
-      return main2;
-    };
-    main = merge(main);
-    const clone = toSort.slice(0);
-    toSort.length = 0;
-    for (let i = 0; i < clone.length; i++) {
-      toSort.push(clone[main[i]]);
-    }
-  }
-};
 const technical = {
   convert: (number) => {
     let result;
@@ -432,13 +229,6 @@ const technical = {
     }
     return result;
   },
-  convertAll: (numbers) => {
-    const result = [];
-    for (let i = 0; i < numbers.length; i++) {
-      result[i] = technical.convert(numbers[i]);
-    }
-    return result;
-  },
   prepare: (number) => {
     if (isFinite(number[0]) && isFinite(number[1])) {
       return number;
@@ -453,10 +243,7 @@ const technical = {
   },
   turnString: (number) => {
     number = technical.prepare(number);
-    if (!isFinite(number[0])) {
-      return `${number[0]}`;
-    }
-    return number[1] === 0 ? `${number[0]}` : `${number[0]}e${number[1]}`;
+    return number[1] === 0 || !isFinite(number[0]) ? `${number[0]}` : `${number[0]}e${number[1]}`;
   },
   /* Main calculations */
   //No abs, isNaN, isFinite because they are too simple
@@ -481,8 +268,8 @@ const technical = {
     } else if (difference > 0) {
       left[0] += right[0] / 10 ** difference;
     } else {
-      right[0] += left[0] / 10 ** -difference;
-      left = right;
+      left[0] = right[0] + left[0] * 10 ** difference;
+      left[1] = right[1];
     }
     const after = Math.abs(left[0]);
     if (after === 0) {
@@ -717,9 +504,9 @@ const technical = {
     }
     return left[1] < right[1];
   },
-  equal: (left, right) => {
-    return left[1] === right[1] && left[0] === right[0];
-  },
+  /*equal: (left: [number, number] | Overlimit, right: [number, number]): boolean => {
+      return left[1] === right[1] && left[0] === right[0];
+  },*/
   notEqual: (left, right) => {
     return left[1] !== right[1] || left[0] !== right[0];
   },
