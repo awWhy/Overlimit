@@ -25,5 +25,5 @@ Supports numbers from -1e1e308 to 1e1e308, small numbers included (1e-1e308)
 1. '1 ** Infinity', '1 ** NaN' now returns 1 instead of NaN
 2. '0 ** 0', 'NaN ** 0' now retuns NaN instead of 1
 3. '0 * Infinity', '0 * NaN' now returns 0 instead of NaN
-4. 'Infinity / 0' now returns NaN instead of Infinity
+4. 'Infinity / 0', '-x ** Infinity' now returns NaN instead of Infinity
 5. '0 / NaN' now returns 0 instead of NaN

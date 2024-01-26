@@ -6,7 +6,7 @@
     '1 ** Infinity', '1 ** NaN' now returns 1 instead of NaN
     '0 ** 0', 'NaN ** 0' now retuns NaN instead of 1
     '0 * Infinity', '0 * NaN' now returns 0 instead of NaN
-    'Infinity / 0' now returns NaN instead of Infinity
+    'Infinity / 0', '-x ** Infinity' now returns NaN instead of Infinity
     '0 / NaN' now returns 0 instead of NaN
     Kept weird JS rules:
     'Infinity ** 0' returns 1 (NaN not included because its true value could be 0)
@@ -17,13 +17,13 @@
 
 /* Can be added if needed:
     sort: Better sorting function that takes function as arqument
-    power: Allow power to be bigger than 2**1024, if there ever will be a need for it
-    log: Allow base to be bigger than 2**1024, if someone actually need it
+    power, root, lot: Allow second argument to be not a number (and bigger than 2 ** 1024), if there is actuall need for it
     format: Fix rare bug with incorrect padding amount: 9.999999 > 10.0000 (instead of 10.000)
     format: Fix rare bug with number going over max allowed value (999999.9 into 1000000, instead of 1e6)
-    format: Allow more than 2 digits if number is >= 1000
+    format: Allow more than 2 digits past point if number is >= 1000
     format: More options to format function object argument: Like point, separator, power, maxPower
     format: Add format for power with a special separator: 1e12345 > 1e12,345 (easy to add, if needed)
+    bigint: Current Overlimit works fine with bigint, so it just adding types and updating tsconfing file
     calculator: Add website where can test calculator
 */
 
@@ -389,7 +389,7 @@ const technical = {
         if (power === 0) { return left[0] === 0 || isNaN(left[0]) ? [NaN, NaN] : [1, 0]; }
         if (left[0] === 0) { return power < 0 ? [NaN, NaN] : [0, 0]; }
         if (!isFinite(power)) {
-            if (left[1] === 0 && Math.abs(left[0]) === 1) { return left[0] === 1 ? [1, 0] : [NaN, NaN]; }
+            if ((left[1] === 0 && left[0] === 1) || left[0] < 0) { return left[0] === 1 ? [1, 0] : [NaN, NaN]; }
             if ((power === -Infinity && left[1] >= 0) || (power === Infinity && left[1] < 0)) { return [0, 0]; }
             return isNaN(power) || isNaN(left[0]) ? [NaN, NaN] : [Infinity, Infinity];
         }

@@ -344,7 +344,7 @@ const technical = {
       return power < 0 ? [NaN, NaN] : [0, 0];
     }
     if (!isFinite(power)) {
-      if (left[1] === 0 && Math.abs(left[0]) === 1) {
+      if (left[1] === 0 && left[0] === 1 || left[0] < 0) {
         return left[0] === 1 ? [1, 0] : [NaN, NaN];
       }
       if (power === -Infinity && left[1] >= 0 || power === Infinity && left[1] < 0) {
