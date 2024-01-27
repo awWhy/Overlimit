@@ -32,6 +32,7 @@ export default class Overlimit extends Array {
   get exponent() {
     return this[1];
   }
+  /** Creates new Overlimit */
   clone() {
     return new Overlimit(this);
   }
@@ -45,9 +46,6 @@ export default class Overlimit extends Array {
   }
   /** Can take any amount of arquments */
   plus(...numbers) {
-    if (numbers.length < 1) {
-      return this;
-    }
     let result = this;
     for (let i = 0; i < numbers.length; i++) {
       result = technical.add(result, technical.convert(numbers[i]));
@@ -56,9 +54,6 @@ export default class Overlimit extends Array {
   }
   /** Can take any amount of arquments */
   minus(...numbers) {
-    if (numbers.length < 1) {
-      return this;
-    }
     let result = this;
     for (let i = 0; i < numbers.length; i++) {
       result = technical.sub(result, technical.convert(numbers[i]));
@@ -67,9 +62,6 @@ export default class Overlimit extends Array {
   }
   /** Can take any amount of arquments */
   multiply(...numbers) {
-    if (numbers.length < 1) {
-      return this;
-    }
     let result = this;
     for (let i = 0; i < numbers.length; i++) {
       result = technical.mult(result, technical.convert(numbers[i]));
@@ -78,9 +70,6 @@ export default class Overlimit extends Array {
   }
   /** Can take any amount of arquments */
   divide(...numbers) {
-    if (numbers.length < 1) {
-      return this;
-    }
     let result = this;
     for (let i = 0; i < numbers.length; i++) {
       result = technical.div(result, technical.convert(numbers[i]));
@@ -140,9 +129,6 @@ export default class Overlimit extends Array {
   }
   /** Can take any amount of arquments; Returns true if no arquments provided */
   allEqual(...compare) {
-    if (compare.length < 1) {
-      return true;
-    }
     let previous = this;
     for (let i = 0; i < compare.length; i++) {
       const next = technical.convert(compare[i]);
@@ -153,11 +139,8 @@ export default class Overlimit extends Array {
     }
     return true;
   }
-  /** Will set new value to original number */
+  /** Set original number to biggest of provided arguments */
   max(...compare) {
-    if (compare.length < 1) {
-      return this;
-    }
     let result = this;
     for (let i = 0; i < compare.length; i++) {
       const after = technical.convert(compare[i]);
@@ -170,11 +153,8 @@ export default class Overlimit extends Array {
     }
     return this.#privateSet(result);
   }
-  /** Will set new value to original number */
+  /** Set original number to smallest of provided arguments */
   min(...compare) {
-    if (compare.length < 1) {
-      return this;
-    }
     let result = this;
     for (let i = 0; i < compare.length; i++) {
       const after = technical.convert(compare[i]);
@@ -187,16 +167,23 @@ export default class Overlimit extends Array {
     }
     return this.#privateSet(result);
   }
+  /** Returns formatted string, takes object as arqument (some default values are from limitSettings)
+   * @param type "number" is default, "input" will make formatted number to be usable in Overlimit
+   * @param digits max digits past point
+   * @param padding should zeros be added past point, if bellow max digits
+   */
   format(settings = {}) {
     return technical.format(this, settings);
   }
+  /** Returns value as Number, doesn't change original number */
   toNumber() {
     return Number(technical.turnString(this));
   }
+  /** Returns value as String, doesn't change original number */
   toString() {
     return technical.turnString(this);
   }
-  /** Manual modification of returned Array can cause bugs */
+  /** Returns value as Array, not recommended, also manual modification of returned Array can cause bugs. doesn't change original number */
   toArray() {
     return [this[0], this[1]];
   }
@@ -251,7 +238,7 @@ const technical = {
     }
     if (!isFinite(left[0]) || !isFinite(right[0])) {
       const check = left[0] + right[0];
-      return isNaN(left[0]) || isNaN(right[0]) || isNaN(check) ? [NaN, NaN] : [check, Infinity];
+      return isNaN(check) ? [NaN, NaN] : [check, Infinity];
     }
     const difference = left[1] - right[1];
     if (Math.abs(difference) > 15) {
@@ -574,7 +561,7 @@ const technical = {
   format: (left, settings) => {
     const [base, power] = left;
     if (!isFinite(base)) {
-      return technical.turnString(left);
+      return `${base}`;
     }
     const { format: setting } = limitSettings;
     if (power >= setting.maxPower || power <= -setting.maxPower) {

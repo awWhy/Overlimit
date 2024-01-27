@@ -51,7 +51,8 @@ export default class Overlimit extends Array<number> {
     get mantissa() { return this[0]; }
     get exponent() { return this[1]; }
 
-    clone() { return new Overlimit(this); }
+    /** Creates new Overlimit */
+    clone(): Overlimit { return new Overlimit(this); }
     setValue(newValue: string | number | [number, number] | Overlimit) { return this.#privateSet(technical.convert(newValue)); }
     #privateSet(newValue: [number, number] | Overlimit) {
         this[0] = newValue[0];
@@ -61,9 +62,7 @@ export default class Overlimit extends Array<number> {
 
     /** Can take any amount of arquments */
     plus(...numbers: Array<string | number | [number, number] | Overlimit>) {
-        if (numbers.length < 1) { return this; }
         let result: [number, number] | Overlimit = this;
-
         for (let i = 0; i < numbers.length; i++) {
             result = technical.add(result, technical.convert(numbers[i]));
         }
@@ -72,9 +71,7 @@ export default class Overlimit extends Array<number> {
     }
     /** Can take any amount of arquments */
     minus(...numbers: Array<string | number | [number, number] | Overlimit>) {
-        if (numbers.length < 1) { return this; }
         let result: [number, number] | Overlimit = this;
-
         for (let i = 0; i < numbers.length; i++) {
             result = technical.sub(result, technical.convert(numbers[i]));
         }
@@ -83,9 +80,7 @@ export default class Overlimit extends Array<number> {
     }
     /** Can take any amount of arquments */
     multiply(...numbers: Array<string | number | [number, number] | Overlimit>) {
-        if (numbers.length < 1) { return this; }
         let result: [number, number] | Overlimit = this;
-
         for (let i = 0; i < numbers.length; i++) {
             result = technical.mult(result, technical.convert(numbers[i]));
         }
@@ -94,9 +89,7 @@ export default class Overlimit extends Array<number> {
     }
     /** Can take any amount of arquments */
     divide(...numbers: Array<string | number | [number, number] | Overlimit>) {
-        if (numbers.length < 1) { return this; }
         let result: [number, number] | Overlimit = this;
-
         for (let i = 0; i < numbers.length; i++) {
             result = technical.div(result, technical.convert(numbers[i]));
         }
@@ -132,8 +125,6 @@ export default class Overlimit extends Array<number> {
     notEqual(compare: string | number | [number, number] | Overlimit): boolean { return technical.notEqual(this, technical.convert(compare)); }
     /** Can take any amount of arquments; Returns true if no arquments provided */
     allEqual(...compare: Array<string | number | [number, number] | Overlimit>): boolean {
-        if (compare.length < 1) { return true; }
-
         let previous: [number, number] | Overlimit = this;
         for (let i = 0; i < compare.length; i++) {
             const next = technical.convert(compare[i]);
@@ -144,11 +135,9 @@ export default class Overlimit extends Array<number> {
         return true;
     }
 
-    /** Will set new value to original number */
+    /** Set original number to biggest of provided arguments */
     max(...compare: Array<string | number | [number, number] | Overlimit>) {
-        if (compare.length < 1) { return this; }
         let result: [number, number] | Overlimit = this;
-
         for (let i = 0; i < compare.length; i++) {
             const after = technical.convert(compare[i]);
             if (isNaN(after[0])) { return this.#privateSet([NaN, NaN]); }
@@ -158,11 +147,9 @@ export default class Overlimit extends Array<number> {
 
         return this.#privateSet(result);
     }
-    /** Will set new value to original number */
+    /** Set original number to smallest of provided arguments */
     min(...compare: Array<string | number | [number, number] | Overlimit>) {
-        if (compare.length < 1) { return this; }
         let result: [number, number] | Overlimit = this;
-
         for (let i = 0; i < compare.length; i++) {
             const after = technical.convert(compare[i]);
             if (isNaN(after[0])) { return this.#privateSet([NaN, NaN]); }
@@ -173,10 +160,17 @@ export default class Overlimit extends Array<number> {
         return this.#privateSet(result);
     }
 
+    /** Returns formatted string, takes object as arqument (some default values are from limitSettings)
+     * @param type "number" is default, "input" will make formatted number to be usable in Overlimit
+     * @param digits max digits past point
+     * @param padding should zeros be added past point, if bellow max digits
+     */
     format(settings = {} as { digits?: number, type?: 'number' | 'input', padding?: boolean }): string { return technical.format(this, settings); }
+    /** Returns value as Number, doesn't change original number */
     toNumber(): number { return Number(technical.turnString(this)); }
+    /** Returns value as String, doesn't change original number */
     toString(): string { return technical.turnString(this); }
-    /** Manual modification of returned Array can cause bugs */
+    /** Returns value as Array, not recommended, also manual modification of returned Array can cause bugs. doesn't change original number */
     toArray(): [number, number] { return [this[0], this[1]]; }
 }
 
@@ -297,7 +291,7 @@ const technical = {
         if (left[0] === 0) { return [right[0], right[1]]; }
         if (!isFinite(left[0]) || !isFinite(right[0])) {
             const check = left[0] + right[0]; //Infinity + -Infinity === NaN
-            return isNaN(left[0]) || isNaN(right[0]) || isNaN(check) ? [NaN, NaN] : [check, Infinity];
+            return isNaN(check) ? [NaN, NaN] : [check, Infinity];
         }
 
         const difference = left[1] - right[1];
@@ -569,7 +563,7 @@ const technical = {
     /* Left is readonly */
     format: (left: [number, number] | Overlimit, settings: { digits?: number, type?: 'number' | 'input', padding?: boolean }): string => {
         const [base, power] = left;
-        if (!isFinite(base)) { return technical.turnString(left); }
+        if (!isFinite(base)) { return `${base}`; }
         const { format: setting } = limitSettings;
 
         //1.23e1.23e123

@@ -1,7 +1,7 @@
 # Overlimit
 ## Alternative to Break Infinity
 Work in progress, 0 dependicies, can ask to add if need missing functions \
-Due to constant fixing of Floating errors, numbers can end up being a little bigger than they should be \
+Tryes to fix floats, keep Infinity or NaN, and overall should be fast \
 To use, just download .ts or .js (JS auto created by esbuild) file of Overlimit \
 Supports numbers from -1e1e308 to 1e1e308, small numbers included (1e-1e308)
 ### Functions: (number can be sended as number, string, readonly [mantissa, exponent] or Overlimit)
@@ -18,9 +18,7 @@ Supports numbers from -1e1e308 to 1e1e308, small numbers included (1e-1e308)
 11. toArray - returns a (readonly) Array version
 12. clone, setValue
 ### Functions that are missing:
-1. root - probably won't be added since it will just call power function with (1 / power) arqument
-2. exp - won't be added, because as far as I know it's just Math.E ** power, so can just use power function
-3. sort - there is deprecated version right now (pretty bad, so its commented)
+1. sort - there is deprecated version right now (pretty bad, so its commented)
 #### Altered JS rules:
 1. '1 ** Infinity', '1 ** NaN' now returns 1 instead of NaN
 2. '0 ** 0', 'NaN ** 0' now retuns NaN instead of 1
