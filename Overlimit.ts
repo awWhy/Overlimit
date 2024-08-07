@@ -16,15 +16,18 @@
 */
 
 /* Can be added if needed:
-    sort: Better sorting function that takes function as arqument
+    rules: Add option to change outcome for some Math rules (x/0, 0**0 and etc.)
+    sort: Better sorting function that takes function as arqument, maybe I could use native one and just check exponent (or log10 version)
     power, root, lot: Allow second argument to be not a number (and bigger than 2 ** 1024), if there is actuall need for it
+    format: Maybe add e1e2 (-e-1e2) format type
     format: Fix rare bug with incorrect padding amount: 9.999999 > 10.0000 (instead of 10.000)
     format: Fix rare bug with number going over max allowed value (999999.9 into 1000000, instead of 1e6)
     format: Allow more than 2 digits past point if number is >= 1000
     format: More options to format function object argument: Like point, separator, power, maxPower
+    format: Add max, min digits for exponent
     format: Add format for power with a special separator: 1e12345 > 1e12,345 (easy to add, if needed)
     bigint: Current Overlimit works fine with bigint, so it just adding types and updating tsconfing file
-    calculator: Add website where can test calculator
+    calculator: Add website with calculator for testing
 */
 
 const limitSettings = { //Export if need
@@ -41,8 +44,9 @@ const limitSettings = { //Export if need
         separator: '' //What should be used as a thousand separator; example 1200 > 1 200
     }
 };
-
-/** To test number for being Overlimit can use: typeof number === 'object'; Array.isArray(number); number instanceof Overlimit */
+/** To test number for being Overlimit can use: typeof number === 'object'; Array.isArray(number); number instanceof Overlimit
+ * @param number Exponent must be truncted, also if Array is used, then must not contain any mistakes (stuff like [11, 0] or [1, NaN] has to be [1.1, 1] and [NaN, NaN]). BigInt is allowed, but TS doesn't know it
+ */
 export default class Overlimit extends Array<number> {
     constructor(number: string | number | [number, number] | Overlimit) {
         const post = technical.convert(number);
@@ -113,9 +117,9 @@ export default class Overlimit extends Array<number> {
     ceil() { return this.#privateSet(technical.ceil(this)); }
     round() { return this.#privateSet(technical.round(this)); }
 
-    /* Doesn't check exponent, since exponent being NaN while mantissa isn't would be a bug */
+    /** Doesn't check exponent, since exponent being NaN while mantissa isn't would be a bug */
     isNaN(): boolean { return isNaN(this[0])/* || isNaN(this[1])*/; }
-    /* Doesn't check exponent, since exponent being Infinity while mantissa isn't would be a bug */
+    /** Doesn't check exponent, since exponent being Infinity while mantissa isn't would be a bug */
     isFinite(): boolean { return isFinite(this[0])/* && isFinite(this[1])*/; }
 
     lessThan(compare: string | number | [number, number] | Overlimit): boolean { return technical.less(this, technical.convert(compare)); }
@@ -123,6 +127,7 @@ export default class Overlimit extends Array<number> {
     moreThan(compare: string | number | [number, number] | Overlimit): boolean { return technical.more(this, technical.convert(compare)); }
     moreOrEqual(compare: string | number | [number, number] | Overlimit): boolean { return technical.moreOrEqual(this, technical.convert(compare)); }
     notEqual(compare: string | number | [number, number] | Overlimit): boolean { return technical.notEqual(this, technical.convert(compare)); }
+    equal(compare: string | number | [number, number] | Overlimit): boolean { return !technical.notEqual(this, technical.convert(compare)); }
     /** Can take any amount of arquments; Returns true if no arquments provided */
     allEqual(...compare: Array<string | number | [number, number] | Overlimit>): boolean {
         let previous: [number, number] | Overlimit = this;
@@ -163,15 +168,17 @@ export default class Overlimit extends Array<number> {
     /** Returns formatted string, takes object as arqument (some default values are from limitSettings)
      * @param type "number" is default, "input" will make formatted number to be usable in Overlimit
      * @param digits max digits past point
-     * @param padding should zeros be added past point, if bellow max digits
+     * @param padding should zeros be added past point, if bellow max digits. 'exponent' value will behave as true, but only after number turns into its shorter version
      */
-    format(settings = {} as { digits?: number, type?: 'number' | 'input', padding?: boolean }): string { return technical.format(this, settings); }
+    format(settings = {} as { digits?: number, type?: 'number' | 'input', padding?: boolean | 'exponent' }): string { return technical.format(this, settings); }
     /** Returns value as Number, doesn't change original number */
     toNumber(): number { return Number(technical.turnString(this)); }
     /** Returns value as String, doesn't change original number */
     toString(): string { return technical.turnString(this); }
     /** Returns value as Array, not recommended, also manual modification of returned Array can cause bugs. doesn't change original number */
     toArray(): [number, number] { return [this[0], this[1]]; }
+    /** Automatically called with JSON.stringify. It will call toString to preserve NaN and Infinity */
+    toJSON(): string { return technical.turnString(this); }
 }
 
 //Sorts provided Array (stable), if second value is true (false by default) then will sort in descending order
@@ -295,7 +302,7 @@ const technical = {
         }
 
         const difference = left[1] - right[1];
-        if (Math.abs(difference) > 15) { return difference > 0 ? left : [right[0], right[1]]; }
+        if (Math.abs(difference) >= 16) { return difference > 0 ? left : [right[0], right[1]]; }
 
         if (difference === 0) {
             left[0] += right[0];
@@ -451,7 +458,7 @@ const technical = {
 
         if (base < 0 || negative) { //Special test for negative numbers
             if (left[1] < 0) { return [NaN, NaN]; }
-            //Due to floats (1.1 * 100 !== 110), test is done in this way (also we assume that numbers are never uneven)
+            //Due to floats (1.1 * 100 !== 110), test is done in this way (also we assume that big numbers are never uneven)
             const test = left[1] < 16 ? Math.abs(Math.round(left[0] * 1e14) / 10 ** (14 - left[1])) % 2 : 0;
             if (base < 0 && !negative) {
                 if (test !== 0) { return [NaN, NaN]; } //Result must be even
@@ -561,10 +568,12 @@ const technical = {
         return left;
     },
     /* Left is readonly */
-    format: (left: [number, number] | Overlimit, settings: { digits?: number, type?: 'number' | 'input', padding?: boolean }): string => {
+    format: (left: [number, number] | Overlimit, settings: { digits?: number, type?: 'number' | 'input', padding?: boolean | 'exponent' }): string => {
         const [base, power] = left;
         if (!isFinite(base)) { return `${base}`; }
         const { format: setting } = limitSettings;
+        const type = settings.type ?? 'number';
+        let padding = settings.padding ?? setting.padding;
 
         //1.23e1.23e123
         if (power >= setting.maxPower || power <= -setting.maxPower) {
@@ -583,15 +592,16 @@ const technical = {
                 exponent++;
             }
 
-            const formatedPower = (settings.padding ?? setting.padding) ? powerMantissa.toFixed(digits) : `${powerMantissa}`;
-            if (settings.type !== 'input' && setting.powerShort) { //1.23ee123 (-1.23e-e123)
+            if (padding === 'exponent') { padding = true; }
+            const formatedPower = padding ? powerMantissa.toFixed(digits) : `${powerMantissa}`;
+            if (type !== 'input' && setting.powerShort) { //1.23ee123 (-1.23e-e123)
                 powerMantissa = Math.abs(powerMantissa);
                 if (base < 0) { powerMantissa *= -1; }
                 return `${formatedPower.replace('.', setting.point)}e${power < 0 ? '-' : ''}e${exponent}`;
             }
 
-            const formatedBase = (settings.padding ?? setting.padding) ? mantissa.toFixed(digits) : `${mantissa}`;
-            return settings.type === 'input' ? `${formatedBase}e${formatedPower}e${exponent}` : `${formatedBase.replace('.', setting.point)}e${formatedPower.replace('.', setting.point)}e${exponent}`;
+            const formatedBase = padding ? mantissa.toFixed(digits) : `${mantissa}`;
+            return type === 'input' ? `${formatedBase}e${formatedPower}e${exponent}` : `${formatedBase.replace('.', setting.point)}e${formatedPower.replace('.', setting.point)}e${exponent}`;
         }
 
         //1.23e123
@@ -603,14 +613,16 @@ const technical = {
                 mantissa /= 10;
                 exponent++;
             }
-            const formated = (settings.padding ?? setting.padding) ? mantissa.toFixed(digits) : `${mantissa}`;
-            return settings.type === 'input' ? `${formated}e${exponent}` : `${formated.replace('.', setting.point)}e${exponent}`;
+            if (padding === 'exponent') { padding = true; }
+            const formated = padding ? mantissa.toFixed(digits) : `${mantissa}`;
+            return type === 'input' ? `${formated}e${exponent}` : `${formated.replace('.', setting.point)}e${exponent}`;
         }
 
         //12345
         const digits = settings.digits ?? Math.max(setting.digits[2] - Math.max(power, 0), setting.digits[0]);
         const mantissa = Math.round(base * 10 ** (digits + power)) / 10 ** digits;
-        const formated = (settings.padding ?? setting.padding) ? mantissa.toFixed(digits) : `${mantissa}`; //Small optimization possible by checking if digits > 0
-        return settings.type === 'input' ? formated : mantissa >= 1e3 ? formated.replace('.', setting.point).replaceAll(/\B(?=(\d{3})+(?!\d))/g, setting.separator) : formated.replace('.', setting.point);
+        if (padding === 'exponent') { padding = false; }
+        const formated = padding ? mantissa.toFixed(digits) : `${mantissa}`; //Small optimization possible by checking if digits > 0
+        return type === 'input' ? formated : mantissa >= 1e3 ? formated.replace('.', setting.point).replaceAll(/\B(?=(\d{3})+(?!\d))/g, setting.separator) : formated.replace('.', setting.point);
     }
 };

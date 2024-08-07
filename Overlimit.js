@@ -104,11 +104,11 @@ export default class Overlimit extends Array {
   round() {
     return this.#privateSet(technical.round(this));
   }
-  /* Doesn't check exponent, since exponent being NaN while mantissa isn't would be a bug */
+  /** Doesn't check exponent, since exponent being NaN while mantissa isn't would be a bug */
   isNaN() {
     return isNaN(this[0]);
   }
-  /* Doesn't check exponent, since exponent being Infinity while mantissa isn't would be a bug */
+  /** Doesn't check exponent, since exponent being Infinity while mantissa isn't would be a bug */
   isFinite() {
     return isFinite(this[0]);
   }
@@ -126,6 +126,9 @@ export default class Overlimit extends Array {
   }
   notEqual(compare) {
     return technical.notEqual(this, technical.convert(compare));
+  }
+  equal(compare) {
+    return !technical.notEqual(this, technical.convert(compare));
   }
   /** Can take any amount of arquments; Returns true if no arquments provided */
   allEqual(...compare) {
@@ -170,7 +173,7 @@ export default class Overlimit extends Array {
   /** Returns formatted string, takes object as arqument (some default values are from limitSettings)
    * @param type "number" is default, "input" will make formatted number to be usable in Overlimit
    * @param digits max digits past point
-   * @param padding should zeros be added past point, if bellow max digits
+   * @param padding should zeros be added past point, if bellow max digits. 'exponent' value will behave as true, but only after number turns into its shorter version
    */
   format(settings = {}) {
     return technical.format(this, settings);
@@ -186,6 +189,10 @@ export default class Overlimit extends Array {
   /** Returns value as Array, not recommended, also manual modification of returned Array can cause bugs. doesn't change original number */
   toArray() {
     return [this[0], this[1]];
+  }
+  /** Automatically called with JSON.stringify. It will call toString to preserve NaN and Infinity */
+  toJSON() {
+    return technical.turnString(this);
   }
 }
 const technical = {
@@ -241,7 +248,7 @@ const technical = {
       return isNaN(check) ? [NaN, NaN] : [check, Infinity];
     }
     const difference = left[1] - right[1];
-    if (Math.abs(difference) > 15) {
+    if (Math.abs(difference) >= 16) {
       return difference > 0 ? left : [right[0], right[1]];
     }
     if (difference === 0) {
@@ -564,6 +571,8 @@ const technical = {
       return `${base}`;
     }
     const { format: setting } = limitSettings;
+    const type = settings.type ?? "number";
+    let padding = settings.padding ?? setting.padding;
     if (power >= setting.maxPower || power <= -setting.maxPower) {
       const digits2 = settings.digits ?? setting.digits[1];
       let exponent = power;
@@ -578,16 +587,19 @@ const technical = {
         powerMantissa /= 10;
         exponent++;
       }
-      const formatedPower = settings.padding ?? setting.padding ? powerMantissa.toFixed(digits2) : `${powerMantissa}`;
-      if (settings.type !== "input" && setting.powerShort) {
+      if (padding === "exponent") {
+        padding = true;
+      }
+      const formatedPower = padding ? powerMantissa.toFixed(digits2) : `${powerMantissa}`;
+      if (type !== "input" && setting.powerShort) {
         powerMantissa = Math.abs(powerMantissa);
         if (base < 0) {
           powerMantissa *= -1;
         }
         return `${formatedPower.replace(".", setting.point)}e${power < 0 ? "-" : ""}e${exponent}`;
       }
-      const formatedBase = settings.padding ?? setting.padding ? mantissa2.toFixed(digits2) : `${mantissa2}`;
-      return settings.type === "input" ? `${formatedBase}e${formatedPower}e${exponent}` : `${formatedBase.replace(".", setting.point)}e${formatedPower.replace(".", setting.point)}e${exponent}`;
+      const formatedBase = padding ? mantissa2.toFixed(digits2) : `${mantissa2}`;
+      return type === "input" ? `${formatedBase}e${formatedPower}e${exponent}` : `${formatedBase.replace(".", setting.point)}e${formatedPower.replace(".", setting.point)}e${exponent}`;
     }
     if (power >= setting.power[0] || power < setting.power[1]) {
       const digits2 = settings.digits ?? setting.digits[1];
@@ -597,12 +609,18 @@ const technical = {
         mantissa2 /= 10;
         exponent++;
       }
-      const formated2 = settings.padding ?? setting.padding ? mantissa2.toFixed(digits2) : `${mantissa2}`;
-      return settings.type === "input" ? `${formated2}e${exponent}` : `${formated2.replace(".", setting.point)}e${exponent}`;
+      if (padding === "exponent") {
+        padding = true;
+      }
+      const formated2 = padding ? mantissa2.toFixed(digits2) : `${mantissa2}`;
+      return type === "input" ? `${formated2}e${exponent}` : `${formated2.replace(".", setting.point)}e${exponent}`;
     }
     const digits = settings.digits ?? Math.max(setting.digits[2] - Math.max(power, 0), setting.digits[0]);
     const mantissa = Math.round(base * 10 ** (digits + power)) / 10 ** digits;
-    const formated = settings.padding ?? setting.padding ? mantissa.toFixed(digits) : `${mantissa}`;
-    return settings.type === "input" ? formated : mantissa >= 1e3 ? formated.replace(".", setting.point).replaceAll(/\B(?=(\d{3})+(?!\d))/g, setting.separator) : formated.replace(".", setting.point);
+    if (padding === "exponent") {
+      padding = false;
+    }
+    const formated = padding ? mantissa.toFixed(digits) : `${mantissa}`;
+    return type === "input" ? formated : mantissa >= 1e3 ? formated.replace(".", setting.point).replaceAll(/\B(?=(\d{3})+(?!\d))/g, setting.separator) : formated.replace(".", setting.point);
   }
 };
