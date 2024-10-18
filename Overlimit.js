@@ -1,6 +1,6 @@
 "use strict";
 const limitSettings = {
-  //Export if need
+  //Export if requiring live editing
   format: {
     //Calling function with type === 'input', will ignore point and separator, also number never turned into 1ee2
     digits: [0, 2, 4],
@@ -108,6 +108,10 @@ export default class Overlimit extends Array {
   isNaN() {
     return isNaN(this[0]);
   }
+  /** Will set new value to provided, but only if current one is NaN */
+  replaceNaN(replaceWith) {
+    return this.isNaN() ? this.setValue(replaceWith) : this;
+  }
   /** Doesn't check exponent, since exponent being Infinity while mantissa isn't would be a bug */
   isFinite() {
     return isFinite(this[0]);
@@ -182,11 +186,19 @@ export default class Overlimit extends Array {
   toNumber() {
     return Number(technical.turnString(this));
   }
+  /** Same as .toNumber, but also converts Infinity (and NaN; can use replaceNaN before calling this function) to Number.MAX_VALUE */
+  toSafeNumber() {
+    const result = Number(technical.turnString(this));
+    if (isFinite(result)) {
+      return result;
+    }
+    return Number.MAX_VALUE * (result < 0 ? -1 : 1);
+  }
   /** Returns value as String, doesn't change original number */
   toString() {
     return technical.turnString(this);
   }
-  /** Returns value as Array, not recommended, also manual modification of returned Array can cause bugs. doesn't change original number */
+  /** Returns value as Array, doesn't change original number */
   toArray() {
     return [this[0], this[1]];
   }
