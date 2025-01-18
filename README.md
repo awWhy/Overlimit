@@ -5,6 +5,7 @@ Tryes to fix floats, keep Infinity or NaN, and overall should be fast \
 To use, just download .ts or .js (JS auto created by esbuild) file of Overlimit \
 Supports numbers from -1e1e308 to 1e1e308, small numbers included (1e-1e308)
 ### Functions: (number can be sended as number, bigint, string, [mantissa, exponent] or Overlimit)
+0. Static compareFunc, used inside native sorting function, first value must be Overlimit, doesn't require cloning: Array.sort((a, b) => Overlimit.compareFunc(new Overlimit(b), a)); This will be equal to b - a
 1. plus, minus, multiply, divide - Any amount of arguments (ignored if 0)
 2. power, root, log - Second arqument must be a number. Log can have negative base (because I don't agree with modern Math, but it doesn't use complex numbers so answer might end up being NaN anyway)
 3. abs

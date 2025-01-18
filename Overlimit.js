@@ -32,6 +32,10 @@ export default class Overlimit extends Array {
   get exponent() {
     return this[1];
   }
+  /** Can be used inside native sorting function, equal to a - b. First variable must be Overlimit, doesn't require cloning, example: [1, '2', new Overlimit(3)].sort((a, b) => Overlimit.compareFunc(new Overlimit(b), a)) */
+  static compareFunc(left, right) {
+    return left.moreThan(right) ? 1 : left.notEqual(right) ? -1 : 0;
+  }
   /** Creates new Overlimit */
   clone() {
     return new Overlimit(this);
@@ -177,7 +181,7 @@ export default class Overlimit extends Array {
   /** Returns formatted string, takes object as arqument (some default values are from limitSettings)
    * @param type "number" is default, "input" will make formatted number to be usable in Overlimit
    * @param digits max digits past point
-   * @param padding should zeros be added past point, if bellow max digits. 'exponent' value will behave as true, but only after number turns into its shorter version
+   * @param padding should zeros be added past point, if below max digits. 'exponent' value will behave as true, but only after number turns into its shorter version
    */
   format(settings = {}) {
     return technical.format(this, settings);

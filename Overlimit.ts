@@ -17,7 +17,6 @@
 
 /* Can be added if needed:
     rules: Add option to change outcome for some Math rules (x/0, 0**0 and etc.)
-    sort: Better sorting function that takes function as arqument, maybe I could use native one and just check exponent (or log10 version)
     power, root, log: Allow second argument to be not a number (and bigger than 2 ** 1024)
     format: Maybe add e1e2 (-e-1e2) format type
     format: Fix rare bug with incorrect padding amount: 9.999999 > 10.0000 (instead of 10.000)
@@ -54,6 +53,11 @@ export default class Overlimit extends Array<number> {
     }
     get mantissa() { return this[0]; }
     get exponent() { return this[1]; }
+
+    /** Can be used inside native sorting function, equal to a - b. First variable must be Overlimit, doesn't require cloning, example: [1, '2', new Overlimit(3)].sort((a, b) => Overlimit.compareFunc(new Overlimit(b), a)) */
+    static compareFunc(left: Overlimit, right: allowedTypes): 1 | 0 | -1 {
+        return left.moreThan(right) ? 1 : left.notEqual(right) ? -1 : 0;
+    }
 
     /** Creates new Overlimit */
     clone(): Overlimit { return new Overlimit(this); }
@@ -188,78 +192,6 @@ export default class Overlimit extends Array<number> {
     /** Automatically called with JSON.stringify. It will call toString to preserve NaN and Infinity */
     toJSON(): string { return technical.turnString(this); }
 }
-
-//Sorts provided Array (stable), if second value is true (false by default) then will sort in descending order
-/*export const LimitAlt = { //Deprecated
-    sort: <sortType extends Array<string | number | [number, number] | Overlimit>>(toSort: sortType, descend = false) => {
-        if (toSort.length < 2) { return; }
-        const numbers = [] as Array<[number, number]>;
-        for (let i = 0; i < toSort.length; i++) {
-            numbers[i] = technical.convert(toSort[i]);
-        }
-        const compare = technical[descend ? 'moreOrEqual' : 'lessOrEqual'];
-
-        let main: number[] | number[][] = [[0]];
-        initial:
-        for (let i = 1; i < numbers.length; i++) {
-            const target = main[main.length - 1];
-            if (compare(numbers[i - 1], numbers[i])) {
-                do {
-                    target.push(i);
-                    i++;
-                    if (i >= numbers.length) { break initial; }
-                } while (compare(numbers[i - 1], numbers[i]));
-                main.push([i]);
-            } else {
-                do {
-                    target.push(i);
-                    i++;
-                    if (i >= numbers.length) {
-                        target.reverse();
-                        break initial;
-                    }
-                } while (compare(numbers[i], numbers[i - 1]));
-                target.reverse();
-                main.push([i]);
-            }
-        }
-
-        const merge = (array: number[][]): number[] | number[][] => {
-            if (array.length === 1) { return array[0]; }
-            let main: number[] | number[][] = [] as number[][];
-
-            let i;
-            for (i = 0; i < array.length - 1; i += 2) {
-                main.push([]);
-                const target = main[main.length - 1];
-                const first = array[i];
-                const second = array[i + 1];
-                let f = 0;
-                let s = 0;
-                while (f < first.length || s < second.length) {
-                    if (s >= second.length || (f < first.length && compare(numbers[first[f]], numbers[second[s]]))) {
-                        target.push(first[f]);
-                        f++;
-                    } else {
-                        target.push(second[s]);
-                        s++;
-                    }
-                }
-            }
-            if (i === array.length - 1) { main.push(array[i]); }
-
-            main = merge(main);
-            return main;
-        };
-        main = merge(main) as number[];
-
-        const clone = toSort.slice(0);
-        toSort.length = 0;
-        for (let i = 0; i < clone.length; i++) {
-            toSort.push(clone[main[i]]);
-        }
-    }
-};*/
 
 /* Private functions */
 const technical = {
