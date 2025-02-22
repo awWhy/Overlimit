@@ -20,7 +20,18 @@ jobs:
           node-version: '16.x'
 
       - name: Build JS file
-        run: | # I have no idea how to save outfile
+        run: |
           npm install
           npm run lint
           npm run build
+
+      - name: Move into a folder
+        run: |
+          mkdir -p folder
+          mv Overlimit.js folder/
+
+      - name: Deploy
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: folder
+          clean: true

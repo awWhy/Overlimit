@@ -9,11 +9,11 @@ Supports numbers from -1e1e308 to 1e1e308, small numbers included (1e-1e308)
 1. plus, minus, multiply, divide - Any amount of arguments (ignored if 0)
 2. power, root, log - Second arqument must be a number. Log can have negative base (because I don't agree with modern Math, but it doesn't use complex numbers so answer might end up being NaN anyway)
 3. abs
-4. lessThan, lessOrEqual, moreThan, moreOrEqual, notEqual, allEqual - only allEqual allow any amount of arguments
+4. lessThan, lessOrEqual, moreThan, moreOrEqual, notEqual, equal - only equal allows any amount of arguments
 5. max, min - any amount of arguments
 6. trunc, floor, ceil, round
 7. isNaN, isFinite - only reacts to mantissa
-8. format - because string numbers shown as 1e1 instead of 10 (has some settings)
+8. format - because string numbers are saved as 1e1 instead of 10
 9. toNumber, toSafeNumber - returns a Number version, safe version replaces Infinity with MAX_VALUE
 10. toString - returns a String version
 11. toArray - returns a (readonly) Array version
