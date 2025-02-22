@@ -1,6 +1,9 @@
 name: Create JS version
 
 on:
+  workflow_dispatch:
+    branches:
+      - main
   push:
     branches:
       - main
@@ -20,7 +23,19 @@ jobs:
           node-version: '16.x'
 
       - name: Build JS file
-        run: | # I have no idea how to save outfile
+        run: |
           npm install
           npm run lint
           npm run build
+
+      - name: Move into a folder
+        run: |
+          mkdir -p folderName
+          mv Overlimit.js folderName/
+
+      - name: Deploy
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: folderName
+          clean: true
+          clean-exclude: README.md
