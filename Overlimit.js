@@ -134,7 +134,7 @@ export default class Overlimit extends Array {
   }
   /** Will set new value to provided, but only if current one is NaN */
   replaceNaN(replaceWith) {
-    return this.isNaN() ? this.setValue(replaceWith) : this;
+    return isNaN(this[0]) ? this.#privateSet(technical.convert(replaceWith)) : this;
   }
   /** Doesn't check exponent, since exponent being Infinity while mantissa isn't would be a bug */
   isFinite() {
@@ -605,18 +605,29 @@ const technical = {
     const defaultSettings = Overlimit.settings.format;
     const type = settings.type ?? "number";
     let padding = settings.padding ?? defaultSettings.padding;
-    const powerAbs = Math.abs(power);
     const bigPowerSettings = defaultSettings.bigPower;
-    if (powerAbs >= bigPowerSettings.convert) {
-      let exponent = Math.floor(Math.log10(powerAbs));
-      const digits2 = Math.max(bigPowerSettings.maxDigits - Math.floor(Math.log10(exponent)), bigPowerSettings.minDigits);
+    if (power >= bigPowerSettings.convert || power <= -bigPowerSettings.convert) {
+      if (padding === "exponent") {
+        padding = true;
+      }
+      let exponent = power;
+      let inputBase = base;
+      if (Math.abs(Math.round(inputBase)) === 10) {
+        inputBase /= 10;
+        exponent++;
+        if (exponent < 0 && exponent > -bigPowerSettings.convert) {
+          return technical.format([inputBase, exponent], settings);
+        }
+      }
+      exponent = Math.floor(Math.log10(Math.abs(exponent)));
+      let digits2 = Math.max(bigPowerSettings.maxDigits - Math.floor(Math.log10(exponent)), bigPowerSettings.minDigits);
       let mantissa2 = Math.round(power / 10 ** (exponent - digits2)) / 10 ** digits2;
       if (Math.abs(mantissa2) === 10) {
         mantissa2 /= 10;
         exponent++;
-      }
-      if (padding === "exponent") {
-        padding = true;
+        if (padding) {
+          digits2 = Math.max(bigPowerSettings.maxDigits - Math.floor(Math.log10(Math.abs(exponent))), bigPowerSettings.minDigits);
+        }
       }
       const short = type !== "input" && bigPowerSettings.short;
       if (short) {
@@ -624,30 +635,42 @@ const technical = {
       }
       const formated2 = padding ? mantissa2.toFixed(digits2) : `${mantissa2}`;
       if (type === "input") {
-        return `${Math.trunc(base)}e${formated2}e${exponent}`;
+        return `${inputBase}e${formated2}e${exponent}`;
       }
       return `${base < 0 ? "-" : ""}${short ? "" : "e"}${formated2.replace(".", defaultSettings.point)}${short ? `e${power < 0 ? "-" : ""}` : ""}e${exponent}`;
     }
     const powerSettings = defaultSettings.power;
     if (power >= powerSettings.convert[0] || power < powerSettings.convert[1]) {
-      const digits2 = Math.max(powerSettings.maxDigits - Math.floor(Math.log10(powerAbs)), powerSettings.minDigits);
+      if (padding === "exponent") {
+        padding = true;
+      }
+      let digits2 = Math.max(powerSettings.maxDigits - Math.floor(Math.log10(Math.abs(power))), powerSettings.minDigits);
       let mantissa2 = Math.round(base * 10 ** digits2) / 10 ** digits2;
       let exponent = power;
       if (Math.abs(mantissa2) === 10) {
         mantissa2 /= 10;
         exponent++;
-      }
-      if (padding === "exponent") {
-        padding = true;
+        if (exponent === powerSettings.convert[1] || exponent === bigPowerSettings.convert) {
+          return technical.format([mantissa2, exponent], settings);
+        }
+        if (padding) {
+          digits2 = Math.max(powerSettings.maxDigits - Math.floor(Math.log10(Math.abs(exponent))), powerSettings.minDigits);
+        }
       }
       const formated2 = padding ? mantissa2.toFixed(digits2) : `${mantissa2}`;
       return type === "input" ? `${formated2}e${exponent}` : `${formated2.replace(".", defaultSettings.point)}e${exponent}`;
     }
     const baseSettings = defaultSettings.base;
-    const digits = power < 1 ? baseSettings.maxDigits : Math.max(baseSettings.maxDigits - power, baseSettings.minDigits);
+    let digits = power < 1 ? baseSettings.maxDigits : Math.max(baseSettings.maxDigits - power, baseSettings.minDigits);
     const mantissa = Math.round(base * 10 ** (digits + power)) / 10 ** digits;
+    const powerCheck = Math.floor(Math.log10(Math.abs(mantissa)));
+    if (powerCheck === powerSettings.convert[0]) {
+      return technical.format([base < 0 ? -1 : 1, powerCheck], settings);
+    }
     if (padding === "exponent") {
       padding = false;
+    } else if (padding && powerCheck !== power) {
+      digits = powerCheck < 1 ? baseSettings.maxDigits : Math.max(baseSettings.maxDigits - powerCheck, baseSettings.minDigits);
     }
     let formated = padding ? mantissa.toFixed(digits) : `${mantissa}`;
     if (type === "input") {
