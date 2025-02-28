@@ -19,8 +19,7 @@
     rules: Add option to change outcome for some Math rules (x/0, 0**0 and etc.)
     power, root, log: Allow second argument to be not a number (and bigger than 2 ** 1024)
     mantissa: Allow to remove first digit for really big numbers (-1e1e1 > -e1e1)
-    optimization: Add non doAll (as example .mutliply that that takes only 1 argument) function types, no idea if there is going to be any benefit (results were ~6%)
-    format: Fix bugs caused by rounding: incorrect padding: 9.999999 > 10.0000, instead of 10.000; incorrect type 999999.9 > 1000000, instead of 1e6
+    optimization: Add non doAll (as example .mutliply that can take only 1 argument) function types, no idea if that is a required potential optimization (its ~6% faster)
     format: More options to format function object argument: At least digits
     format: Add format for power with a special separator: 1e12345 > 1e12,345
     calculator: Add website with calculator for testing
@@ -151,7 +150,7 @@ export default class Overlimit extends Array<number> {
     /** Doesn't check exponent, since exponent being NaN while mantissa isn't would be a bug */
     isNaN(): boolean { return isNaN(this[0])/* || isNaN(this[1])*/; }
     /** Will set new value to provided, but only if current one is NaN */
-    replaceNaN(replaceWith: allowedTypes): Overlimit { return this.isNaN() ? this.setValue(replaceWith) : this; }
+    replaceNaN(replaceWith: allowedTypes): Overlimit { return isNaN(this[0]) ? this.#privateSet(technical.convert(replaceWith)) : this; }
     /** Doesn't check exponent, since exponent being Infinity while mantissa isn't would be a bug */
     isFinite(): boolean { return isFinite(this[0])/* && isFinite(this[1])*/; }
 
@@ -540,51 +539,71 @@ const technical = {
         const type = settings.type ?? 'number';
         let padding = settings.padding ?? defaultSettings.padding;
 
-        const powerAbs = Math.abs(power);
         const bigPowerSettings = defaultSettings.bigPower;
-        if (powerAbs >= bigPowerSettings.convert) { //e1.23e123 (-e-1.23e123)
-            let exponent = Math.floor(Math.log10(powerAbs));
-            const digits = Math.max(bigPowerSettings.maxDigits - Math.floor(Math.log10(exponent)), bigPowerSettings.minDigits);
-            let mantissa = Math.round(power / 10 ** (exponent - digits)) / 10 ** digits;
-            if (Math.abs(mantissa) === 10) {
-                mantissa /= 10;
+        if (power >= bigPowerSettings.convert || power <= -bigPowerSettings.convert) { //e1.23e123 (-e-1.23e123)
+            if (padding === 'exponent') { padding = true; }
+            let exponent = power;
+            let inputBase = base;
+            if (Math.abs(Math.round(inputBase)) === 10) { //Probably not required, but just in case
+                inputBase /= 10;
                 exponent++;
+                if (exponent < 0 && exponent > -bigPowerSettings.convert) { return technical.format([inputBase, exponent], settings); }
             }
 
-            if (padding === 'exponent') { padding = true; }
+            exponent = Math.floor(Math.log10(Math.abs(exponent)));
+            let digits = Math.max(bigPowerSettings.maxDigits - Math.floor(Math.log10(exponent)), bigPowerSettings.minDigits);
+            let mantissa = Math.round(power / 10 ** (exponent - digits)) / 10 ** digits;
+            if (Math.abs(mantissa) === 10) { //To remove rare bugs
+                mantissa /= 10;
+                exponent++;
+                if (padding) { digits = Math.max(bigPowerSettings.maxDigits - Math.floor(Math.log10(Math.abs(exponent))), bigPowerSettings.minDigits); }
+            }
+
             const short = type !== 'input' && bigPowerSettings.short; //1.23ee123 (-1.23e-e123)
             if (short) { mantissa = Math.abs(mantissa); }
-            const formated = (padding ? mantissa.toFixed(digits) : `${mantissa}`);
-            if (type === 'input') { return `${Math.trunc(base)}e${formated}e${exponent}`; }
+            const formated = padding ? mantissa.toFixed(digits) : `${mantissa}`;
+            if (type === 'input') { return `${inputBase}e${formated}e${exponent}`; }
             return `${base < 0 ? '-' : ''}${short ? '' : 'e'}${formated.replace('.', defaultSettings.point)}${short ? `e${power < 0 ? '-' : ''}` : ''}e${exponent}`;
         }
 
         const powerSettings = defaultSettings.power;
         if (power >= powerSettings.convert[0] || power < powerSettings.convert[1]) { //1.23e123 (-1.23e-123)
-            const digits = Math.max(powerSettings.maxDigits - Math.floor(Math.log10(powerAbs)), powerSettings.minDigits);
+            if (padding === 'exponent') { padding = true; }
+
+            let digits = Math.max(powerSettings.maxDigits - Math.floor(Math.log10(Math.abs(power))), powerSettings.minDigits);
             let mantissa = Math.round(base * 10 ** digits) / 10 ** digits;
             let exponent = power;
-            if (Math.abs(mantissa) === 10) {
+            if (Math.abs(mantissa) === 10) { //To remove rare bugs
                 mantissa /= 10;
                 exponent++;
+                if (exponent === powerSettings.convert[1] || exponent === bigPowerSettings.convert) { return technical.format([mantissa, exponent], settings); }
+                if (padding) { digits = Math.max(powerSettings.maxDigits - Math.floor(Math.log10(Math.abs(exponent))), powerSettings.minDigits); }
             }
-            if (padding === 'exponent') { padding = true; }
+
             const formated = padding ? mantissa.toFixed(digits) : `${mantissa}`;
             return type === 'input' ? `${formated}e${exponent}` : `${formated.replace('.', defaultSettings.point)}e${exponent}`;
         }
 
         //12345 (-12345)
         const baseSettings = defaultSettings.base;
-        const digits = power < 1 ? baseSettings.maxDigits :
+        let digits = power < 1 ? baseSettings.maxDigits :
             Math.max(baseSettings.maxDigits - power, baseSettings.minDigits);
         const mantissa = Math.round(base * 10 ** (digits + power)) / 10 ** digits;
-        if (padding === 'exponent') { padding = false; }
+
+        const powerCheck = Math.floor(Math.log10(Math.abs(mantissa))); //To remove rare bugs
+        if (powerCheck === powerSettings.convert[0]) { return technical.format([base < 0 ? -1 : 1, powerCheck], settings); }
+        if (padding === 'exponent') {
+            padding = false;
+        } else if (padding && powerCheck !== power) {
+            digits = powerCheck < 1 ? baseSettings.maxDigits :
+                Math.max(baseSettings.maxDigits - powerCheck, baseSettings.minDigits);
+        }
+
         let formated = padding ? mantissa.toFixed(digits) : `${mantissa}`;
         if (type === 'input') { return formated; }
-
         let ending = ''; //Being lazy
         const index = formated.indexOf('.');
-        if (index !== -1) { //For some reason this replaces dot 2 times faster (?), also fixes spaces after dot (not required)
+        if (index !== -1) { //For some reason this replaces dot 2 times faster (?), also fixes spaces after dot
             ending = `${defaultSettings.point}${formated.slice(index + 1)}`;
             formated = formated.slice(0, index);
         }
