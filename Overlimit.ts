@@ -40,7 +40,7 @@ export default class Overlimit extends Array<number> {
     static settings = {
         /** Default settings for format function */
         format: {
-            /** Everything related to most basic style (123.45) */
+            /** Everything related to the most basic style (123.45) */
             base: {
                 /** Max amount of allowed digits past the point */
                 maxDigits: 5,
@@ -68,7 +68,7 @@ export default class Overlimit extends Array<number> {
                 minDigits: 0
             },
             /** True means zero's will be added after dot until required digits amount is reached \
-             * Can use value 'exponent' to set to true only if converted to power style or above
+             * Can use value 'exponent' to behave like 'true', but only if converted to power style or above
              */
             padding: false as boolean | 'exponent',
             /** What format should use instead of dot (1.23) */
@@ -87,8 +87,10 @@ export default class Overlimit extends Array<number> {
 
     /** Creates new Overlimit */
     clone(): Overlimit { return new Overlimit(this); }
-    setValue(newValue: allowedTypes) { return this.#privateSet(technical.convert(newValue)); }
-    #privateSet(newValue: [number, number] | Overlimit) {
+    setValue(newValue: allowedTypes) { return this.privateSet(technical.convert(newValue)); }
+
+    /** Not for use, sets formatted value to Overlimit */
+    privateSet(newValue: [number, number] | Overlimit) {
         this[0] = newValue[0];
         this[1] = newValue[1];
         return this;
@@ -101,7 +103,7 @@ export default class Overlimit extends Array<number> {
             result = technical.add(result, technical.convert(numbers[i]));
         }
 
-        return this.#privateSet(result);
+        return this.privateSet(result);
     }
     /** Can take any amount of arquments */
     minus(...numbers: allowedTypes[]) {
@@ -110,7 +112,7 @@ export default class Overlimit extends Array<number> {
             result = technical.sub(result, technical.convert(numbers[i]));
         }
 
-        return this.#privateSet(result);
+        return this.privateSet(result);
     }
     /** Can take any amount of arquments */
     multiply(...numbers: allowedTypes[]) {
@@ -119,7 +121,7 @@ export default class Overlimit extends Array<number> {
             result = technical.mult(result, technical.convert(numbers[i]));
         }
 
-        return this.#privateSet(result);
+        return this.privateSet(result);
     }
     /** Can take any amount of arquments */
     divide(...numbers: allowedTypes[]) {
@@ -128,29 +130,29 @@ export default class Overlimit extends Array<number> {
             result = technical.div(result, technical.convert(numbers[i]));
         }
 
-        return this.#privateSet(result);
+        return this.privateSet(result);
     }
     /** Power must be a number */
-    power(power: number) { return this.#privateSet(technical.pow(this, power)); }
+    power(power: number) { return this.privateSet(technical.pow(this, power)); }
     /** Root must be a number, default value is 2 */
-    root(root = 2) { return this.#privateSet(technical.pow(this, 1 / root)); }
+    root(root = 2) { return this.privateSet(technical.pow(this, 1 / root)); }
     /** Base must be a number, default value is Math.E */
-    log(base = 2.718281828459045) { return this.#privateSet(technical.log(this, base)); }
+    log(base = 2.718281828459045) { return this.privateSet(technical.log(this, base)); }
 
     abs() {
         this[0] = Math.abs(this[0]);
         return this;
     }
 
-    trunc() { return this.#privateSet(technical.trunc(this)); }
-    floor() { return this.#privateSet(technical.floor(this)); }
-    ceil() { return this.#privateSet(technical.ceil(this)); }
-    round() { return this.#privateSet(technical.round(this)); }
+    trunc() { return this.privateSet(technical.trunc(this)); }
+    floor() { return this.privateSet(technical.floor(this)); }
+    ceil() { return this.privateSet(technical.ceil(this)); }
+    round() { return this.privateSet(technical.round(this)); }
 
     /** Doesn't check exponent, since exponent being NaN while mantissa isn't would be a bug */
     isNaN(): boolean { return isNaN(this[0])/* || isNaN(this[1])*/; }
-    /** Will set new value to provided, but only if current one is NaN */
-    replaceNaN(replaceWith: allowedTypes): Overlimit { return isNaN(this[0]) ? this.#privateSet(technical.convert(replaceWith)) : this; }
+    /** Will set new value to the provided one, but only if current one is NaN */
+    replaceNaN(replaceWith: allowedTypes): Overlimit { return isNaN(this[0]) ? this.privateSet(technical.convert(replaceWith)) : this; }
     /** Doesn't check exponent, since exponent being Infinity while mantissa isn't would be a bug */
     isFinite(): boolean { return isFinite(this[0])/* && isFinite(this[1])*/; }
 
@@ -171,29 +173,29 @@ export default class Overlimit extends Array<number> {
         return true;
     }
 
-    /** Set original number to biggest of provided arguments */
+    /** Set original number to the biggest of provided arguments */
     max(...compare: allowedTypes[]) {
         let result: [number, number] | Overlimit = this;
         for (let i = 0; i < compare.length; i++) {
             const after = technical.convert(compare[i]);
-            if (isNaN(after[0])) { return this.#privateSet([NaN, NaN]); }
+            if (isNaN(after[0])) { return this.privateSet([NaN, NaN]); }
 
             if (technical.less(result, after)) { result = after; }
         }
 
-        return this.#privateSet(result);
+        return this.privateSet(result);
     }
-    /** Set original number to smallest of provided arguments */
+    /** Set original number to the smallest of provided arguments */
     min(...compare: allowedTypes[]) {
         let result: [number, number] | Overlimit = this;
         for (let i = 0; i < compare.length; i++) {
             const after = technical.convert(compare[i]);
-            if (isNaN(after[0])) { return this.#privateSet([NaN, NaN]); }
+            if (isNaN(after[0])) { return this.privateSet([NaN, NaN]); }
 
             if (technical.more(result, after)) { result = after; }
         }
 
-        return this.#privateSet(result);
+        return this.privateSet(result);
     }
 
     /** Returns formatted string, takes object as arqument
