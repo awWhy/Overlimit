@@ -109,9 +109,9 @@ export default class Overlimit extends Array {
   root(root = 2) {
     return this.privateSet(technical.pow(this, 1 / root));
   }
-  /** Base must be a number, default value is Math.E */
-  log(base = 2.718281828459045) {
-    return this.privateSet(technical.log(this, base));
+  /** Default value is Math.E */
+  log(base) {
+    return this.privateSet(technical.log(this, base === void 0 ? [2.718281828459045, 0] : technical.convert(base)));
   }
   abs() {
     this[0] = Math.abs(this[0]);
@@ -409,31 +409,29 @@ const technical = {
     }
     return left;
   },
+  /* Base is readonly */
   log: (left, base) => {
-    if (Math.abs(base) === 1 || left[0] === -1 && left[1] === 0) {
+    if (base[0] === 0 || base[1] === 0 && Math.abs(base[0]) === 1) {
       return [NaN, NaN];
     }
-    if (left[0] === 1 && left[1] === 0) {
-      return [0, 0];
-    }
-    if (base === 0) {
-      return [NaN, NaN];
+    if (left[1] === 0 && Math.abs(left[0]) === 1) {
+      return left[0] === 1 ? [0, 0] : [NaN, NaN];
     }
     if (left[0] === 0) {
-      return isNaN(base) ? [NaN, NaN] : [Math.abs(base) > 1 ? -Infinity : Infinity, Infinity];
+      return isNaN(base[0]) ? [NaN, NaN] : [Math.abs(base[0]) > 1 ? -Infinity : Infinity, Infinity];
     }
-    if (!isFinite(base)) {
+    if (!isFinite(base[0])) {
       return [NaN, NaN];
     }
     if (!isFinite(left[0])) {
       if (isNaN(left[0]) || left[0] === -Infinity) {
         return [NaN, NaN];
       }
-      return [Math.abs(base) < 1 ? -Infinity : Infinity, Infinity];
+      return [Math.abs(base[0]) < 1 ? -Infinity : Infinity, Infinity];
     }
     const negative = left[0] < 0;
     if (negative) {
-      if (base > 0) {
+      if (base[0] > 0) {
         return [NaN, NaN];
       }
       left[0] *= -1;
@@ -446,8 +444,8 @@ const technical = {
     if (tooSmall) {
       left[0] *= -1;
     }
-    if (base !== 10) {
-      left[0] /= Math.log10(Math.abs(base));
+    if (base[1] !== 1 || base[0] !== 1) {
+      left[0] /= Math.log10(Math.abs(base[0])) + base[1];
       const after = Math.abs(left[0]);
       if (after < 1 || after >= 10) {
         const digits = Math.floor(Math.log10(after));
@@ -455,12 +453,12 @@ const technical = {
         left[1] += digits;
       }
     }
-    if (base < 0 || negative) {
+    if (base[0] < 0 || negative) {
       if (left[1] < 0) {
         return [NaN, NaN];
       }
       const test = left[1] < 16 ? Math.abs(Math.round(left[0] * 1e14) / 10 ** (14 - left[1])) % 2 : 0;
-      if (base < 0 && !negative) {
+      if (base[0] < 0 && !negative) {
         if (test !== 0) {
           return [NaN, NaN];
         }
