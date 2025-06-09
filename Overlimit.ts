@@ -20,6 +20,7 @@
     power, root: Allow second argument to be not a number (and bigger than 2 ** 1024)
     mantissa: Allow to remove first digit for really big numbers (-1e1e1 > -e1e1)
     optimization: Add non doAll (as example .mutliply that can take only 1 argument) function types, no idea if that is a required potential optimization (its ~6% faster)
+    optimization: Convert arrays into typed array, I tryed it, but while they are ~2 times to read, they are ~10 times slower to create
     format: More options to format function object argument: At least digits
     format: Add format for power with a special separator: 1e12345 > 1e12,345
     calculator: Add website with calculator for testing
