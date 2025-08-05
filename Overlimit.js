@@ -274,10 +274,7 @@ const technical = {
     if (typeof number === "object" && number !== null) {
       return number;
     }
-    if (typeof number !== "string") {
-      number = `${number}`;
-    }
-    const index = number.indexOf("e");
+    const index = typeof number === "string" ? number.indexOf("e") : -1;
     const result = index === -1 ? [Number(number), 0] : [Number(number.slice(0, index)), Number(number.slice(index + 1))];
     if (!isFinite(result[0]) || !isFinite(result[1])) {
       if (result[0] === 0 || result[1] === -Infinity) {
