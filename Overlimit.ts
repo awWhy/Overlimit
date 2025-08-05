@@ -570,31 +570,31 @@ const technical = {
     },
     /* Left and right are readonly */
     less: (left: [number, number] | Overlimit, right: [number, number] | Overlimit): boolean => {
-        if (left[1] === right[1]) { return left[0] < right[0]; }
-        if (left[0] > 0) { return right[0] > 0 ? left[1] < right[1] : false; }
-        return right[0] < 0 ? left[1] > right[1] : true;
+        if (left[0] === 0 || right[0] === 0 || left[1] === right[1]) { return left[0] < right[0]; }
+        if (right[0] > 0) { return left[0] < 0 ? true : right[1] > left[1]; } //NaN safety
+        return left[0] < 0 && right[1] < left[1];
     },
     /* Left and right are readonly */
     lessOrEqual: (left: [number, number] | Overlimit, right: [number, number] | Overlimit): boolean => {
-        if (left[1] === right[1]) { return left[0] <= right[0]; }
-        if (left[0] > 0) { return right[0] > 0 ? left[1] < right[1] : false; }
-        return right[0] < 0 ? left[1] > right[1] : true;
+        if (left[0] === 0 || right[0] === 0 || left[1] === right[1]) { return left[0] <= right[0]; }
+        if (right[0] > 0) { return left[0] < 0 ? true : right[1] > left[1]; } //NaN safety
+        return left[0] < 0 && right[1] < left[1];
     },
     /* Left and right are readonly */
     more: (left: [number, number] | Overlimit, right: [number, number] | Overlimit): boolean => {
-        if (left[1] === right[1]) { return left[0] > right[0]; }
-        if (left[0] > 0) { return right[0] > 0 ? left[1] > right[1] : true; }
-        return right[0] < 0 ? left[1] < right[1] : false;
+        if (left[0] === 0 || right[0] === 0 || left[1] === right[1]) { return left[0] > right[0]; }
+        if (left[0] > 0) { return right[0] < 0 ? true : left[1] > right[1]; } //NaN safety
+        return right[0] < 0 && left[1] < right[1];
     },
     /* Left and right are readonly */
     moreOrEqual: (left: [number, number] | Overlimit, right: [number, number] | Overlimit): boolean => {
-        if (left[1] === right[1]) { return left[0] >= right[0]; }
-        if (left[0] > 0) { return right[0] > 0 ? left[1] > right[1] : true; }
-        return right[0] < 0 ? left[1] < right[1] : false;
+        if (left[0] === 0 || right[0] === 0 || left[1] === right[1]) { return left[0] >= right[0]; }
+        if (left[0] > 0) { return right[0] < 0 ? true : left[1] > right[1]; } //NaN safety
+        return right[0] < 0 && left[1] < right[1];
     },
     /* Left and right are readonly */
     equal: (left: Overlimit, right: [number, number] | Overlimit): boolean => {
-        return left[1] === right[1] || left[0] === right[0];
+        return left[1] === right[1] && left[0] === right[0];
     },
     /* Left and right are readonly */
     notEqual: (left: Overlimit, right: [number, number] | Overlimit): boolean => {
