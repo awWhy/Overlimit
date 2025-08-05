@@ -262,9 +262,8 @@ export default class Overlimit extends Array<number> {
 const technical = {
     convert: (number: allowedTypes): [number, number] | Overlimit => {
         if (typeof number === 'object' && number !== null) { return number; } //Readonly Array
-        if (typeof number !== 'string') { number = `${number}`; } //Using log10 could cause floating point error
-        const index = number.indexOf('e'); //Array.split is 3 times slower
-        const result: [number, number] = index === -1 ? [Number(number), 0] : [Number(number.slice(0, index)), Number(number.slice(index + 1))];
+        const index = typeof number === 'string' ? number.indexOf('e') : -1; //Non-string is less accurate, but float fix does help
+        const result: [number, number] = index === -1 ? [Number(number), 0] : [Number((number as string).slice(0, index)), Number((number as string).slice(index + 1))]; //Array.split is 3 times slower
 
         if (!isFinite(result[0]) || !isFinite(result[1])) {
             if (result[0] === 0 || result[1] === -Infinity) { return [0, 0]; }
