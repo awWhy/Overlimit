@@ -568,43 +568,43 @@ const technical = {
   },
   /* Left and right are readonly */
   less: (left, right) => {
-    if (left[1] === right[1]) {
+    if (left[0] === 0 || right[0] === 0 || left[1] === right[1]) {
       return left[0] < right[0];
     }
-    if (left[0] > 0) {
-      return right[0] > 0 ? left[1] < right[1] : false;
+    if (right[0] > 0) {
+      return left[0] < 0 ? true : right[1] > left[1];
     }
-    return right[0] < 0 ? left[1] > right[1] : true;
+    return left[0] < 0 && right[1] < left[1];
   },
   /* Left and right are readonly */
   lessOrEqual: (left, right) => {
-    if (left[1] === right[1]) {
+    if (left[0] === 0 || right[0] === 0 || left[1] === right[1]) {
       return left[0] <= right[0];
     }
-    if (left[0] > 0) {
-      return right[0] > 0 ? left[1] < right[1] : false;
+    if (right[0] > 0) {
+      return left[0] < 0 ? true : right[1] > left[1];
     }
-    return right[0] < 0 ? left[1] > right[1] : true;
+    return left[0] < 0 && right[1] < left[1];
   },
   /* Left and right are readonly */
   more: (left, right) => {
-    if (left[1] === right[1]) {
+    if (left[0] === 0 || right[0] === 0 || left[1] === right[1]) {
       return left[0] > right[0];
     }
     if (left[0] > 0) {
-      return right[0] > 0 ? left[1] > right[1] : true;
+      return right[0] < 0 ? true : left[1] > right[1];
     }
-    return right[0] < 0 ? left[1] < right[1] : false;
+    return right[0] < 0 && left[1] < right[1];
   },
   /* Left and right are readonly */
   moreOrEqual: (left, right) => {
-    if (left[1] === right[1]) {
+    if (left[0] === 0 || right[0] === 0 || left[1] === right[1]) {
       return left[0] >= right[0];
     }
     if (left[0] > 0) {
-      return right[0] > 0 ? left[1] > right[1] : true;
+      return right[0] < 0 ? true : left[1] > right[1];
     }
-    return right[0] < 0 ? left[1] < right[1] : false;
+    return right[0] < 0 && left[1] < right[1];
   },
   /* Left and right are readonly */
   equal: (left, right) => {
