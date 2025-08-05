@@ -140,7 +140,7 @@ export default class Overlimit extends Array {
     return technical.notEqual(this, technical.convert(compare));
   }
   equal(compare) {
-    return !technical.notEqual(this, technical.convert(compare));
+    return technical.equal(this, technical.convert(compare));
   }
   max(compare) {
     const after = technical.convert(compare);
@@ -570,128 +570,105 @@ const technical = {
   },
   /* Left and right are readonly */
   less: (left, right) => {
-    if (left[0] === 0 || right[0] === 0 || left[1] === right[1]) {
+    if (left[1] === right[1]) {
       return left[0] < right[0];
     }
-    if (left[0] > 0 && right[0] > 0) {
-      return left[1] < right[1];
+    if (left[0] > 0) {
+      return right[0] > 0 ? left[1] < right[1] : false;
     }
-    if (left[0] < 0 && right[0] > 0) {
-      return true;
-    }
-    if (right[0] < 0 && left[0] > 0) {
-      return false;
-    }
-    return left[1] > right[1];
+    return right[0] < 0 ? left[1] > right[1] : true;
   },
   /* Left and right are readonly */
   lessOrEqual: (left, right) => {
-    if (left[0] === 0 || right[0] === 0 || left[1] === right[1]) {
+    if (left[1] === right[1]) {
       return left[0] <= right[0];
     }
-    if (left[0] > 0 && right[0] > 0) {
-      return left[1] < right[1];
+    if (left[0] > 0) {
+      return right[0] > 0 ? left[1] < right[1] : false;
     }
-    if (left[0] < 0 && right[0] > 0) {
-      return true;
-    }
-    if (right[0] < 0 && left[0] > 0) {
-      return false;
-    }
-    return left[1] > right[1];
+    return right[0] < 0 ? left[1] > right[1] : true;
   },
   /* Left and right are readonly */
   more: (left, right) => {
-    if (left[0] === 0 || right[0] === 0 || left[1] === right[1]) {
+    if (left[1] === right[1]) {
       return left[0] > right[0];
     }
-    if (left[0] > 0 && right[0] > 0) {
-      return left[1] > right[1];
+    if (left[0] > 0) {
+      return right[0] > 0 ? left[1] > right[1] : true;
     }
-    if (left[0] < 0 && right[0] > 0) {
-      return false;
-    }
-    if (right[0] < 0 && left[0] > 0) {
-      return true;
-    }
-    return left[1] < right[1];
+    return right[0] < 0 ? left[1] < right[1] : false;
   },
   /* Left and right are readonly */
   moreOrEqual: (left, right) => {
-    if (left[0] === 0 || right[0] === 0 || left[1] === right[1]) {
+    if (left[1] === right[1]) {
       return left[0] >= right[0];
     }
-    if (left[0] > 0 && right[0] > 0) {
-      return left[1] > right[1];
+    if (left[0] > 0) {
+      return right[0] > 0 ? left[1] > right[1] : true;
     }
-    if (left[0] < 0 && right[0] > 0) {
-      return false;
-    }
-    if (right[0] < 0 && left[0] > 0) {
-      return true;
-    }
-    return left[1] < right[1];
+    return right[0] < 0 ? left[1] < right[1] : false;
+  },
+  /* Left and right are readonly */
+  equal: (left, right) => {
+    return left[1] === right[1] || left[0] === right[0];
   },
   /* Left and right are readonly */
   notEqual: (left, right) => {
     return left[1] !== right[1] || left[0] !== right[0];
   },
   trunc: (left) => {
-    if (left[1] < 0) {
-      left[0] = 0;
-      left[1] = 0;
-    } else if (left[1] === 0) {
-      left[0] = Math.trunc(left[0]);
-    } else if (left[1] <= 14) {
-      left[0] = Math.trunc(left[0] * 10 ** left[1]) / 10 ** left[1];
+    if (left[1] < 14) {
+      if (left[1] < 0) {
+        left[0] = 0;
+        left[1] = 0;
+      } else {
+        left[0] = Math.trunc(left[0] * 10 ** left[1]) / 10 ** left[1];
+      }
     }
     return left;
   },
   floor: (left) => {
-    if (left[1] < 0) {
-      left[0] = left[0] < 0 ? -1 : 0;
-      left[1] = 0;
-      return left;
-    } else if (left[1] === 0) {
-      left[0] = Math.floor(left[0]);
-    } else if (left[1] <= 14) {
-      left[0] = Math.floor(left[0] * 10 ** left[1]) / 10 ** left[1];
-    }
-    if (left[0] === -10) {
-      left[0] = -1;
-      left[1]++;
+    if (left[1] < 14) {
+      if (left[1] < 0) {
+        left[0] = left[0] < 0 ? -1 : 0;
+        left[1] = 0;
+      } else {
+        left[0] = Math.floor(left[0] * 10 ** left[1]) / 10 ** left[1];
+        if (left[0] === -10) {
+          left[0] = -1;
+          left[1]++;
+        }
+      }
     }
     return left;
   },
   ceil: (left) => {
-    if (left[1] < 0) {
-      left[0] = left[0] < 0 ? 0 : 1;
-      left[1] = 0;
-      return left;
-    } else if (left[1] === 0) {
-      left[0] = Math.ceil(left[0]);
-    } else if (left[1] <= 14) {
-      left[0] = Math.ceil(left[0] * 10 ** left[1]) / 10 ** left[1];
-    }
-    if (left[0] === 10) {
-      left[0] = 1;
-      left[1]++;
+    if (left[1] < 14) {
+      if (left[1] < 0) {
+        left[0] = left[0] < 0 ? 0 : 1;
+        left[1] = 0;
+      } else {
+        left[0] = Math.ceil(left[0] * 10 ** left[1]) / 10 ** left[1];
+        if (left[0] === 10) {
+          left[0] = 1;
+          left[1]++;
+        }
+      }
     }
     return left;
   },
   round: (left) => {
-    if (left[1] < 0) {
-      left[0] = left[1] === -1 ? Math.round(left[0] / 10) : 0;
-      left[1] = 0;
-      return left;
-    } else if (left[1] === 0) {
-      left[0] = Math.round(left[0]);
-    } else if (left[1] <= 14) {
-      left[0] = Math.round(left[0] * 10 ** left[1]) / 10 ** left[1];
-    }
-    if (Math.abs(left[0]) === 10) {
-      left[0] /= 10;
-      left[1]++;
+    if (left[1] < 14) {
+      if (left[1] < 0) {
+        left[0] = left[1] === -1 ? Math.round(left[0] / 10) : 0;
+        left[1] = 0;
+      } else {
+        left[0] = Math.round(left[0] * 10 ** left[1]) / 10 ** left[1];
+        if (Math.abs(left[0]) === 10) {
+          left[0] /= 10;
+          left[1]++;
+        }
+      }
     }
     return left;
   },
