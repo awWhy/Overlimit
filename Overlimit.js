@@ -328,9 +328,7 @@ const technical = {
       }
       return left;
     }
-    if (difference === 0) {
-      left[0] += right[0];
-    } else if (difference > 0) {
+    if (difference >= 0) {
       left[0] += right[0] / 10 ** difference;
     } else {
       left[0] = right[0] + left[0] * 10 ** difference;
