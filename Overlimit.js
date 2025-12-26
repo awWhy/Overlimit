@@ -670,7 +670,7 @@ const technical = {
     }
     return left;
   },
-  /* Left is readonly */
+  /* Left is readonly. String.replace can be replaced with .slice for 4x speed up if required, but I am just going to hope that it will be optimized by browsers eventually */
   format: (left, settings) => {
     const [base, power] = left;
     if (!isFinite(base)) {
@@ -750,12 +750,18 @@ const technical = {
     if (type === "input") {
       return formated;
     }
-    let ending = "";
-    const index = formated.indexOf(".");
-    if (index !== -1) {
-      ending = `${defaultSettings.point}${formated.slice(index + 1)}`;
-      formated = formated.slice(0, index);
+    if (mantissa >= 1e3) {
+      let index = formated.indexOf(".");
+      if (index !== -1) {
+        formated = `${formated.slice(0, index)}${defaultSettings.point}${formated.slice(index + 1)}`;
+      } else {
+        index = formated.length;
+      }
+      while (index > 3) {
+        index -= 3;
+        formated = `${formated.slice(0, index)}${defaultSettings.separator}${formated.slice(index)}`;
+      }
     }
-    return `${mantissa >= 1e3 ? formated.replaceAll(/\B(?=(\d{3})+(?!\d))/g, defaultSettings.separator) : formated}${ending}`;
+    return formated;
   }
 };
