@@ -747,10 +747,7 @@ const technical = {
       digits = powerCheck < 1 ? baseSettings.maxDigits : Math.max(baseSettings.maxDigits - powerCheck, baseSettings.minDigits);
     }
     let formated = padding ? mantissa.toFixed(digits) : `${mantissa}`;
-    if (type === "input") {
-      return formated;
-    }
-    if (mantissa >= 1e3) {
+    if (type !== "input" && mantissa >= 1e3) {
       let index = formated.indexOf(".");
       if (index !== -1) {
         formated = `${formated.slice(0, index)}${defaultSettings.point}${formated.slice(index + 1)}`;
