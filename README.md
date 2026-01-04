@@ -7,7 +7,7 @@ It uses 2 numbers ([mantissa, exponent]) instead of native 1 to have higher limi
 0. Static compareFunc, used inside native sorting function, first value must be Overlimit: Array.sort((a, b) => Overlimit.compareFunc(b, a)); This will be equal to b - a
 1. Standart, nothing special: plus, minus, multiply, divide, abs, lessThan, lessOrEqual, moreThan, moreOrEqual, notEqual, equal, max, min, trunc, floor, ceil, round
 2. power, root - Second arqument must be a number
-3. log - Can have negative base (because I don't agree with modern Math, but it doesn't use complex numbers so answer might end up being NaN anyway)
+3. log, logExp - logExp allows to have negative base (because I don't agree with modern Math, but it doesn't use complex numbers so answer might end up being NaN anyway)
 4. isNaN, isFinite - Only reacts to mantissa
 5. format - For basic formatting because string numbers are saved as 1e1 instead of 10 (returns a String)
 6. replaceNaN - Replaces current value with provided, but only if current one is NaN
