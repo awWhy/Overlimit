@@ -7,12 +7,10 @@
     '0 ** 0', 'NaN ** 0' now retuns NaN instead of 1
     '0 * Infinity', '0 * NaN' now returns 0 instead of NaN
     'Infinity / 0', '-x ** Infinity' now returns NaN instead of Infinity
-    '0 / NaN' now returns 0 instead of NaN
-    Kept weird JS rules:
-    'Infinity ** 0' returns 1 (NaN not included because its true value could be 0)
-    'X / -+Infinity' returns 0 (precision being lost will result in 0)
 
-    Most of these are either common sense or help against bugs (0 ** 0, 0 * NaN)
+    Logic behind is to help against bugs (0 ** 0 is a good example)
+    In these calculation I assume that Infinity is number Much bigger than its possible to represent
+    And NaN being any number and simutanionsly non-number as long as no complex Math is required
 */
 
 /* Can be added if requested:
@@ -409,7 +407,7 @@ const technical = {
             left[0] = NaN;
             left[1] = NaN;
             return left;
-        } else if (left[0] === 0) { return left; }
+        }
 
         left[1] -= right[1];
         left[0] /= right[0];
