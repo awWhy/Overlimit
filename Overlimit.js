@@ -415,8 +415,6 @@ const technical = {
       left[0] = NaN;
       left[1] = NaN;
       return left;
-    } else if (left[0] === 0) {
-      return left;
     }
     left[1] -= right[1];
     left[0] /= right[0];
