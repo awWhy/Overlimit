@@ -439,26 +439,23 @@ const technical = {
     return left;
   },
   pow: (left, power) => {
-    if (power === 0) {
-      if (left[0] === 0 || isNaN(left[0])) {
+    if (left[0] === 0) {
+      if (power <= 0 || isNaN(power)) {
         left[0] = NaN;
         left[1] = NaN;
-      } else {
-        left[0] = 1;
-        left[1] = 0;
       }
       return left;
-    } else if (left[0] === 0) {
-      if (power < 0) {
-        left[0] = NaN;
-        left[1] = NaN;
+    } else if (power === 0) {
+      if (!isNaN(left[0])) {
+        left[0] = 1;
+        left[1] = 0;
       }
       return left;
     } else if (!isFinite(power)) {
       if (left[1] === 0 && left[0] === 1) {
         return left;
       }
-      if (left[0] < 0 || isNaN(power) || isNaN(left[0])) {
+      if (left[0] < 0 || isNaN(left[0]) || isNaN(power)) {
         left[0] = NaN;
         left[1] = NaN;
       } else if (power === -Infinity && left[1] >= 0 || power === Infinity && left[1] < 0) {
@@ -481,11 +478,12 @@ const technical = {
     }
     const base10 = power * (Math.log10(left[0]) + left[1]);
     if (!isFinite(base10)) {
+      if (isNaN(left[0])) {
+        return left;
+      }
       if (base10 === -Infinity) {
         left[0] = 0;
         left[1] = 0;
-      } else if (isNaN(left[0])) {
-        left[1] = NaN;
       } else {
         left[0] = negative === 1 ? -Infinity : Infinity;
         left[1] = Infinity;
@@ -511,15 +509,15 @@ const technical = {
       left[1] = NaN;
       return left;
     } else if (left[1] === 0 && left[0] === 1) {
-      if (left[0] === 1) {
-        left[0] = 0;
-      } else {
+      if (isNaN(base[0])) {
         left[0] = NaN;
         left[1] = NaN;
+      } else {
+        left[0] = 0;
       }
       return left;
     } else if (left[0] <= 0) {
-      if (isNaN(base[0]) || left[0] < 0) {
+      if (isNaN(base[0]) || left[0] !== 0) {
         left[0] = NaN;
         left[1] = NaN;
       } else {
@@ -527,16 +525,12 @@ const technical = {
         left[1] = Infinity;
       }
       return left;
-    } else if (!isFinite(base[0])) {
-      left[0] = NaN;
-      left[1] = NaN;
-      return left;
-    } else if (!isFinite(left[0])) {
-      if (isNaN(left[0]) || left[0] === -Infinity) {
+    } else if (!isFinite(left[0]) || !isFinite(base[0])) {
+      if (left[0] !== Infinity || isNaN(base[0])) {
         left[0] = NaN;
         left[1] = NaN;
       } else {
-        left[0] = base[0] < 1 ? -Infinity : Infinity;
+        left[0] = base[1] < 0 ? -Infinity : Infinity;
         left[1] = Infinity;
       }
       return left;
@@ -567,83 +561,31 @@ const technical = {
   },
   /* Base is readonly */
   log2: (left, base) => {
-    if (base[0] === 0 || base[1] === 0 && Math.abs(base[0]) === 1) {
-      left[0] = NaN;
-      left[1] = NaN;
-      return left;
-    } else if (left[1] === 0 && Math.abs(left[0]) === 1) {
-      if (left[0] === 1) {
-        left[0] = 0;
-      } else {
+    const baseNeg = base[0] < 0;
+    if (baseNeg) {
+      if (base[0] === -Infinity && left[0] !== 0 && (left[0] !== 1 || left[1] !== 0)) {
         left[0] = NaN;
         left[1] = NaN;
+        return left;
       }
-      return left;
-    } else if (left[0] === 0) {
-      if (isNaN(base[0])) {
-        left[0] = NaN;
-        left[1] = NaN;
-      } else {
-        left[0] = base[1] < 0 ? Infinity : -Infinity;
-        left[1] = Infinity;
-      }
-      return left;
-    } else if (!isFinite(base[0])) {
-      left[0] = NaN;
-      left[1] = NaN;
-      return left;
-    } else if (!isFinite(left[0])) {
-      if (isNaN(left[0]) || left[0] === -Infinity) {
-        left[0] = NaN;
-        left[1] = NaN;
-      } else {
-        left[0] = Math.abs(base[0]) < 1 ? -Infinity : Infinity;
-        left[1] = Infinity;
-      }
-      return left;
+      base = [-base[0], base[1]];
     }
-    const negative = left[0] < 0;
-    if (negative) {
-      if (base[0] > 0) {
+    const leftNeg = left[0] < 0;
+    if (leftNeg) {
+      if (!baseNeg || left[0] === -Infinity || left[0] === -1 && left[1] === 0) {
         left[0] = NaN;
         left[1] = NaN;
         return left;
       }
       left[0] *= -1;
     }
-    const tooSmall = left[1] < 0;
-    const base10 = Math.log10(Math.abs(Math.log10(left[0]) + left[1]));
-    const target = Math.floor(base10);
-    left[0] = 10 ** (base10 - target);
-    left[1] = target;
-    if (tooSmall) {
-      left[0] *= -1;
+    if (!isFinite(technical.log(left, base)[0])) {
+      return left;
     }
-    if (base[1] !== 1 || base[0] !== 1) {
-      left[0] /= Math.log10(Math.abs(base[0])) + base[1];
-      const after = Math.abs(left[0]);
-      if (after < 1 || after >= 10) {
-        const digits = Math.floor(Math.log10(after));
-        left[0] /= 10 ** digits;
-        left[1] += digits;
-      }
-    }
-    left[0] = Math.round(left[0] * 1e14) / 1e14;
-    if (Math.abs(left[0]) === 10) {
-      left[0] /= 10;
-      left[1]++;
-    }
-    if (base[0] < 0 || negative) {
-      if (left[1] < 0) {
-        left[0] = NaN;
-        left[1] = NaN;
-        return left;
-      }
-      const test = left[1] < 16 ? Math.abs(Math.round(left[0] * 1e14) / 10 ** (14 - left[1])) % 2 : 0;
-      if (base[0] < 0 && (negative ? test !== 1 : test !== 0)) {
-        left[0] = NaN;
-        left[1] = NaN;
-      }
+    if ((baseNeg || leftNeg) && (left[1] < 0 || //Result below must be (leftNeg ? odd : even), big numbers are always even
+    (left[1] < 16 ? Math.abs(Math.round(left[0] * 1e14) / 10 ** (14 - left[1])) % 2 : 0) !== (leftNeg ? 1 : 0))) {
+      left[0] = NaN;
+      left[1] = NaN;
     }
     return left;
   },
