@@ -40,6 +40,7 @@
         "prefer-object-has-own": "warn",
         "no-labels": "off",
 
+        "@typescript-eslint/adjacent-overload-signatures": "off",
         "@typescript-eslint/indent": "off",
         "@typescript-eslint/semi": ["error", "always"],
         "@typescript-eslint/explicit-function-return-type": "off",

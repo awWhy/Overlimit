@@ -10,7 +10,7 @@ It uses 2 numbers ([mantissa, exponent]) instead of native 1 to have higher limi
 3. log, logExp - logExp allows to have negative base (because I don't agree with modern Math, but it doesn't use complex numbers so answer might end up being NaN anyway)
 4. isNaN, isFinite - Only reacts to mantissa
 5. format - For basic formatting because string numbers are saved as 1e1 instead of 10 (returns a String)
-6. replaceNaN - Replaces current value with provided, but only if current one is NaN
+6. replaceNaN (also replaceInfinity) - Replaces current value with provided, but only if current one is NaN
 7. clone, setValue - Clone will create new Overlimit, setValue will overwrite current value
 8. toNumber, toSafeNumber, toString, toArray - returns a diffent type version, safeNumber will return Number.MAX_VALUE in case of NaN/Infinity after conversion; String version can be converted with Number(); Array version is readonly
 9. all + FunctionName - Same functions, but they can use any amount of arguments (they aren't faster, but also probably not slower. Maybe max/min are faster)
