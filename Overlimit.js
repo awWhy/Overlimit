@@ -1,15 +1,5 @@
 "use strict";
 export default class Overlimit extends Array {
-  constructor(number) {
-    const after = technical.convert(number);
-    super(after[0], after[1]);
-  }
-  get mantissa() {
-    return this[0];
-  }
-  get exponent() {
-    return this[1];
-  }
   static settings = {
     /** Default settings for format function */
     format: {
@@ -52,9 +42,47 @@ export default class Overlimit extends Array {
       separator: ""
     }
   };
+  constructor(number) {
+    const after = technical.convert(number);
+    super(after[0], after[1]);
+  }
+  get mantissa() {
+    return this[0];
+  }
+  get exponent() {
+    return this[1];
+  }
+  set mantissa(value) {
+    const after = technical.convert(`${value}e${this[1]}`);
+    this[0] = after[0];
+    this[1] = after[1];
+  }
+  set exponent(value) {
+    this[1] = Math.trunc(Number(value));
+    if (!isFinite(this[1])) {
+      if (this[1] === -Infinity) {
+        this[0] = 0;
+        this[1] = 0;
+      } else {
+        this[0] = this[0] < 0 ? -value : value;
+      }
+    }
+  }
   /** Can be used inside native sorting function, equal to a - b. First variable must be Overlimit, doesn't require cloning, example: [1, '2', new Overlimit(3)].sort((a, b) => Overlimit.compareFunc(new Overlimit(b), a)) */
   static compareFunc(left, right) {
     return left.moreThan(right) ? 1 : left.notEqual(right) ? -1 : 0;
+  }
+  /** Biggest value that can be represented before Infinity */
+  static get maxValue() {
+    return new Overlimit([9.99999999999999, Number.MAX_VALUE]);
+  }
+  /** Biggest value that can be represented before precision lost with exponent */
+  static get maxSafeInteger() {
+    return new Overlimit([9.99999999999999, Number.MAX_SAFE_INTEGER]);
+  }
+  /** Smallest value that can be represented before 0 */
+  static get minValue() {
+    return new Overlimit([1, -Number.MAX_VALUE]);
   }
   /** Creates new Overlimit */
   clone() {
@@ -65,10 +93,6 @@ export default class Overlimit extends Array {
     this[0] = after[0];
     this[1] = after[1];
     return this;
-  }
-  /** Fixes exponent not being floored, old mantissa will be added into new one */
-  floorExponent() {
-    return technical.fixExpo(this);
   }
   plus(number) {
     return technical.add(this, technical.convert(number));
@@ -115,22 +139,36 @@ export default class Overlimit extends Array {
   round() {
     return technical.round(this);
   }
-  /** Doesn't check exponent, since exponent being NaN while mantissa isn't would be a bug */
+  /** Doesn't check mantissa */
   isNaN() {
-    return isNaN(this[0]);
+    return (
+      /*isNaN(this[0]) ||*/
+      isNaN(this[1])
+    );
   }
-  /** Will set new value to the provided one, but only if current one is NaN */
+  /** Doesn't check mantissa */
+  isFinite() {
+    return (
+      /*isFinite(this[0]) &&*/
+      isFinite(this[1])
+    );
+  }
+  /** Replaces NaN with provided value */
   replaceNaN(replaceWith) {
-    if (isNaN(this[0])) {
+    if (isNaN(this[1])) {
       const after = technical.convert(replaceWith);
       this[0] = after[0];
       this[1] = after[1];
     }
     return this;
   }
-  /** Doesn't check exponent, since exponent being Infinity while mantissa isn't would be a bug */
-  isFinite() {
-    return isFinite(this[0]);
+  /** Replaces +-Infinity with Overlimit.maxValue */
+  replaceInfinity() {
+    if (this[1] === Infinity) {
+      this[0] = this[0] < 0 ? -9.99999999999999 : 9.99999999999999;
+      this[1] = Number.MAX_VALUE;
+    }
+    return this;
   }
   lessThan(compare) {
     return technical.less(this, technical.convert(compare));
@@ -152,7 +190,7 @@ export default class Overlimit extends Array {
   }
   max(compare) {
     const after = technical.convert(compare);
-    if (isNaN(after[0])) {
+    if (isNaN(after[1])) {
       this[0] = NaN;
       this[1] = NaN;
     } else if (technical.less(this, after)) {
@@ -163,7 +201,7 @@ export default class Overlimit extends Array {
   }
   min(compare) {
     const after = technical.convert(compare);
-    if (isNaN(after[0])) {
+    if (isNaN(after[1])) {
       this[0] = NaN;
       this[1] = NaN;
     } else if (technical.more(this, after)) {
@@ -183,13 +221,10 @@ export default class Overlimit extends Array {
   toNumber() {
     return Number(technical.turnString(this));
   }
-  /** Same as .toNumber, but replaces Infinity and NaN with Number.MAX_VALUE */
+  /** Same as .toNumber, but replaces +-Infinity with Number.MAX_VALUE */
   toSafeNumber() {
     const result = Number(technical.turnString(this));
-    if (isFinite(result)) {
-      return result;
-    }
-    return Number.MAX_VALUE * (result < 0 ? -1 : 1);
+    return result === Infinity ? Number.MAX_VALUE : result === -Infinity ? -Number.MAX_VALUE : result;
   }
   /** Returns value as String, doesn't change original number */
   toString() {
@@ -241,7 +276,7 @@ export default class Overlimit extends Array {
     let result = this;
     for (let i = 0; i < compare.length; i++) {
       const after = technical.convert(compare[i]);
-      if (isNaN(after[0])) {
+      if (isNaN(after[1])) {
         this[0] = NaN;
         this[1] = NaN;
         return this;
@@ -261,7 +296,7 @@ export default class Overlimit extends Array {
     let result = this;
     for (let i = 0; i < compare.length; i++) {
       const after = technical.convert(compare[i]);
-      if (isNaN(after[0])) {
+      if (isNaN(after[1])) {
         this[0] = NaN;
         this[1] = NaN;
         return this;
@@ -283,7 +318,7 @@ const technical = {
       return number;
     }
     const index = typeof number === "string" ? number.indexOf("e") : -1;
-    const result = index === -1 ? [Number(number), 0] : [Number(number.slice(0, index)), Number(number.slice(index + 1))];
+    const result = index === -1 ? [Number(number), 0] : [Number(number.slice(0, index)), Math.trunc(Number(number.slice(index + 1)))];
     if (!isFinite(result[0]) || !isFinite(result[1])) {
       if (result[0] === 0 || result[1] === -Infinity) {
         return [0, 0];
@@ -312,22 +347,6 @@ const technical = {
     }
     return result;
   },
-  fixExpo: (number) => {
-    const target = Math.floor(number[1]);
-    if (target !== number[1]) {
-      const negative = number[0] < 0;
-      number[0] = Math.round((10 ** (number[1] - target) - 1 + Math.abs(number[0])) * 1e14) / 1e14;
-      number[1] = target;
-      if (number[0] >= 10) {
-        number[0] /= 10;
-        number[1]++;
-      }
-      if (negative) {
-        number[0] *= -1;
-      }
-    }
-    return number;
-  },
   /* Number is readonly */
   turnString: (number) => number[1] === 0 || !isFinite(number[0]) ? `${number[0]}` : `${number[0]}e${number[1]}`,
   /* Right is readonly */
@@ -339,9 +358,9 @@ const technical = {
       left[0] = right[0];
       left[1] = right[1];
       return left;
-    } else if (!isFinite(left[0]) || !isFinite(right[0])) {
+    } else if (!isFinite(left[1]) || !isFinite(right[1])) {
       left[0] += right[0];
-      left[1] = isNaN(left[0]) ? NaN : Infinity;
+      left[1] = isNaN(left[1]) ? NaN : Infinity;
       return left;
     }
     const difference = left[1] - right[1];
@@ -411,7 +430,13 @@ const technical = {
   },
   /* Right is readonly */
   div: (left, right) => {
-    if (right[0] === 0) {
+    if (left[0] === 0) {
+      if (isNaN(right[1])) {
+        left[0] = NaN;
+        left[1] = NaN;
+      }
+      return left;
+    } else if (right[0] === 0) {
       left[0] = NaN;
       left[1] = NaN;
       return left;
@@ -446,7 +471,7 @@ const technical = {
       }
       return left;
     } else if (power === 0) {
-      if (!isNaN(left[0])) {
+      if (!isNaN(left[1])) {
         left[0] = 1;
         left[1] = 0;
       }
@@ -455,10 +480,10 @@ const technical = {
       if (left[1] === 0 && left[0] === 1) {
         return left;
       }
-      if (left[0] < 0 || isNaN(left[0]) || isNaN(power)) {
+      if (left[0] < 0 || isNaN(left[1]) || isNaN(power)) {
         left[0] = NaN;
         left[1] = NaN;
-      } else if (power === -Infinity && left[1] >= 0 || power === Infinity && left[1] < 0) {
+      } else if (power === Infinity ? left[1] < 0 : power === -Infinity && left[1] >= 0) {
         left[0] = 0;
         left[1] = 0;
       } else {
@@ -478,7 +503,7 @@ const technical = {
     }
     const base10 = power * (Math.log10(left[0]) + left[1]);
     if (!isFinite(base10)) {
-      if (isNaN(left[0])) {
+      if (isNaN(left[1])) {
         return left;
       }
       if (base10 === -Infinity) {
@@ -509,7 +534,7 @@ const technical = {
       left[1] = NaN;
       return left;
     } else if (left[1] === 0 && left[0] === 1) {
-      if (isNaN(base[0])) {
+      if (isNaN(base[1])) {
         left[0] = NaN;
         left[1] = NaN;
       } else {
@@ -517,7 +542,7 @@ const technical = {
       }
       return left;
     } else if (left[0] <= 0) {
-      if (isNaN(base[0]) || left[0] !== 0) {
+      if (isNaN(base[1]) || left[0] !== 0) {
         left[0] = NaN;
         left[1] = NaN;
       } else {
@@ -525,8 +550,8 @@ const technical = {
         left[1] = Infinity;
       }
       return left;
-    } else if (!isFinite(left[0]) || !isFinite(base[0])) {
-      if (left[0] !== Infinity || isNaN(base[0])) {
+    } else if (!isFinite(left[1]) || !isFinite(base[1])) {
+      if (left[0] !== Infinity || isNaN(base[1])) {
         left[0] = NaN;
         left[1] = NaN;
       } else {
@@ -579,7 +604,7 @@ const technical = {
       }
       left[0] *= -1;
     }
-    if (!isFinite(technical.log(left, base)[0])) {
+    if (!isFinite(technical.log(left, base)[1])) {
       return left;
     }
     if ((baseNeg || leftNeg) && (left[1] < 0 || //Result below must be (leftNeg ? odd : even), big numbers are always even
