@@ -58,7 +58,7 @@ export default class Overlimit extends Array {
     this[1] = after[1];
   }
   set exponent(value) {
-    this[1] = Math.trunc(Number(value));
+    this[1] = Math.trunc(value);
     if (!isFinite(this[1])) {
       if (this[1] === -Infinity) {
         this[0] = 0;
@@ -109,12 +109,13 @@ export default class Overlimit extends Array {
   }
   /** Power must be a number */
   power(power) {
-    return technical.pow(this, power);
+    return technical.pow(this, Number(power));
   }
   /** Root must be a number, default value is 2 */
   root(root = 2) {
     return technical.pow(this, 1 / root);
   }
+  //Root is auto converted into Number
   /** Default value is Math.E */
   log(base) {
     return technical.log(this, base === void 0 ? [Math.E, 0] : technical.convert(base));
@@ -217,20 +218,23 @@ export default class Overlimit extends Array {
   format(settings = {}) {
     return technical.format(this, settings);
   }
-  /** Returns value as Number, doesn't change original number */
+  /** Returns value as Number */
   toNumber() {
     return Number(technical.turnString(this));
   }
-  /** Same as .toNumber, but replaces +-Infinity with Number.MAX_VALUE */
-  toSafeNumber() {
+  /** Same as .toNumber, but replaces +-Infinity with Number.MAX_VALUE. Will also replace NaN with provided value (NaN by default) */
+  toSafeNumber(replaceNaN = NaN) {
     const result = Number(technical.turnString(this));
+    if (isNaN(result)) {
+      return Number(replaceNaN);
+    }
     return result === Infinity ? Number.MAX_VALUE : result === -Infinity ? -Number.MAX_VALUE : result;
   }
-  /** Returns value as String, doesn't change original number */
+  /** Returns value as String */
   toString() {
     return technical.turnString(this);
   }
-  /** Returns value as Array, doesn't change original number */
+  /** Clones and returns value as Array */
   toArray() {
     return [this[0], this[1]];
   }
