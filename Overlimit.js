@@ -225,10 +225,10 @@ export default class Overlimit extends Array {
   /** Same as .toNumber, but replaces +-Infinity with Number.MAX_VALUE. Will also replace NaN with provided value (NaN by default) */
   toSafeNumber(replaceNaN = NaN) {
     const result = Number(technical.turnString(this));
-    if (isNaN(result)) {
-      return Number(replaceNaN);
+    if (isFinite(result)) {
+      return result;
     }
-    return result === Infinity ? Number.MAX_VALUE : result === -Infinity ? -Number.MAX_VALUE : result;
+    return result === Infinity ? Number.MAX_VALUE : result === -Infinity ? -Number.MAX_VALUE : Number(replaceNaN);
   }
   /** Returns value as String */
   toString() {
@@ -555,7 +555,7 @@ const technical = {
       }
       return left;
     } else if (!isFinite(left[1]) || !isFinite(base[1])) {
-      if (left[0] !== Infinity || isNaN(base[1])) {
+      if (left[1] !== Infinity || isNaN(base[1])) {
         left[0] = NaN;
         left[1] = NaN;
       } else {
