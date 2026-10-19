@@ -352,7 +352,7 @@ const technical = {
     return result;
   },
   /* Number is readonly */
-  turnString: (number) => number[1] === 0 || !isFinite(number[0]) ? `${number[0]}` : `${number[0]}e${number[1]}`,
+  turnString: (number) => number[1] === 0 || !isFinite(number[1]) ? `${number[0]}` : `${number[0]}e${number[1]}`,
   /* Right is readonly */
   add: (left, right) => {
     if (right[0] === 0) {
