@@ -87,7 +87,7 @@ export default class Overlimit extends Array<number> {
         this[1] = after[1];
     }
     set exponent(value: number) {
-        this[1] = Math.trunc(Number(value));
+        this[1] = Math.trunc(value); //Auto converted into Number
         if (!isFinite(this[1])) {
             if (this[1] === -Infinity) {
                 this[0] = 0;
@@ -121,9 +121,9 @@ export default class Overlimit extends Array<number> {
     multiply(number: allowedTypes): this { return technical.mult(this, technical.convert(number)) as this; }
     divide(number: allowedTypes): this { return technical.div(this, technical.convert(number)) as this; }
     /** Power must be a number */
-    power(power: number): this { return technical.pow(this, power) as this; }
+    power(power: number): this { return technical.pow(this, Number(power)) as this; }
     /** Root must be a number, default value is 2 */
-    root(root = 2): this { return technical.pow(this, 1 / root) as this; }
+    root(root = 2): this { return technical.pow(this, 1 / root) as this; } //Root is auto converted into Number
     /** Default value is Math.E */
     log(base?: allowedTypes): this { return technical.log(this, base === undefined ? [Math.E, 0] : technical.convert(base)) as this; }
     /** Experemental version of .log that allows negative numbers as long as complex numbers are not required */
@@ -196,16 +196,17 @@ export default class Overlimit extends Array<number> {
      * @param padding should zeros be added past point, if below max digits. 'exponent' value will behave as true, but only after number turns to power version or above
      */
     format(settings = {} as { type?: 'number' | 'input', padding?: boolean | 'exponent' }): string { return technical.format(this, settings); }
-    /** Returns value as Number, doesn't change original number */
+    /** Returns value as Number */
     toNumber(): number { return Number(technical.turnString(this)); }
-    /** Same as .toNumber, but replaces +-Infinity with Number.MAX_VALUE */
-    toSafeNumber(): number {
+    /** Same as .toNumber, but replaces +-Infinity with Number.MAX_VALUE. Will also replace NaN with provided value (NaN by default) */
+    toSafeNumber(replaceNaN = NaN): number {
         const result = Number(technical.turnString(this));
-        return result === Infinity ? Number.MAX_VALUE : result === -Infinity ? -Number.MAX_VALUE : result;
+        if (isFinite(result)) { return result; }
+        return result === Infinity ? Number.MAX_VALUE : result === -Infinity ? -Number.MAX_VALUE : Number(replaceNaN);
     }
-    /** Returns value as String, doesn't change original number */
+    /** Returns value as String */
     toString(): string { return technical.turnString(this); }
-    /** Returns value as Array, doesn't change original number */
+    /** Clones and returns value as Array */
     toArray(): [number, number] { return [this[0], this[1]]; }
     /** Automatically called with JSON.stringify. It will call toString to preserve NaN and Infinity */
     toJSON(): string { return technical.turnString(this); }
@@ -325,7 +326,7 @@ const technical = {
         return result;
     },
     /* Number is readonly */
-    turnString: (number: Overlimit): string => number[1] === 0 || !isFinite(number[0]) ? `${number[0]}` : `${number[0]}e${number[1]}`,
+    turnString: (number: Overlimit): string => number[1] === 0 || !isFinite(number[1]) ? `${number[0]}` : `${number[0]}e${number[1]}`,
     /* Right is readonly */
     add: (left: Overlimit, right: [number, number] | Overlimit): Overlimit => {
         if (right[0] === 0) { return left; }
@@ -533,7 +534,7 @@ const technical = {
             }
             return left;
         } else if (!isFinite(left[1]) || !isFinite(base[1])) {
-            if (left[0] !== Infinity || isNaN(base[1])) { //base === -Infinity
+            if (left[1] !== Infinity || isNaN(base[1])) { //base === -Infinity
                 left[0] = NaN;
                 left[1] = NaN;
             } else { //Base being Infinity only allowed for consistency
@@ -691,7 +692,7 @@ const technical = {
     /* Left is readonly. String.replace can be replaced with .slice for 4x speed up if required, but I am just going to hope that it will be optimized by browsers eventually */
     format: (left: [number, number] | Overlimit, settings: { type?: 'number' | 'input', padding?: boolean | 'exponent' }): string => {
         const [base, power] = left;
-        if (!isFinite(base)) { return `${base}`; }
+        if (!isFinite(base)) { return `${base}`; } //Just in case leaving base check instead of power, to easier see if something went wrong somehow
         const defaultSettings = Overlimit.settings.format;
         const type = settings.type ?? 'number';
         let padding = settings.padding ?? defaultSettings.padding;
